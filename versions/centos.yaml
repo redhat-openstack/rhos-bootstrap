@@ -1,0 +1,104 @@
+---
+###########
+# Distros #
+###########
+distros:
+  centos:
+    mirror:
+      - http://mirror.centos.org
+    versions:
+      - 7
+      - 8
+      - 8-stream
+  fedora:
+    versions:
+      - ''
+    mirror:
+      - https://mirrors.fedoraproject.org
+
+######################
+# OpenStack versions #
+######################
+versions:
+  master: &master_branch
+    distros: &distros_centos8
+      - centos8
+      - centos8-stream
+    repos:
+      centos8: &centos8_repos
+        - highavailability
+        - powertools
+      centos8-stream: *centos8_repos
+      ceph:
+        - octopus
+      delorean:
+        - current-tripleo
+        - deps
+    modules:
+      container-tools: rhel8
+      virt: rhel
+      python36: 3.6
+  wallaby: *master_branch
+  ###################
+  # Stable Branches #
+  ###################
+  victoria:
+    distros: *distros_centos8
+    repos:
+      centos8: *centos8_repos
+      centos8-stream: *centos8_repos
+      ceph: &ceph_nautilus
+        - nautilus
+      delorean: &delorean_stable
+        - current-tripleo
+        - deps
+    modules: &stable_modules
+      container-tools: 2.0
+      virt: 8.2
+      python36: 3.6
+  ussuri:
+    distros: *distros_centos8
+    repos:
+      centos8: *centos8_repos
+      centos8-stream: *centos8_repos
+      ceph: *ceph_nautilus
+      delorean: *delorean_stable
+    modules: *stable_modules
+  train:
+    distros:
+      - centos7
+      - centos8
+      - centos8-stream
+    repos:
+      centos7: &centos7_repos
+        - opstools
+      centos8: *centos8_repos
+      centos8-stream: *centos8_repos
+      ceph: *ceph_nautilus
+      delorean: *delorean_stable
+    modules: *stable_modules
+  stein:
+    distros:
+      - centos7
+    repos:
+      centos7: *centos7_repos
+      ceph: &ceph_luminous
+        - luminous
+      delorean: *delorean_stable
+  rocky:
+    distros:
+      - centos7
+    repos:
+      centos7: *centos7_repos
+      ceph: *ceph_luminous
+      delorean: *delorean_stable
+  queens:
+    distros:
+      - centos7
+    repos:
+      centos7: *centos7_repos
+      ceph: *ceph_luminous
+      delorean: *delorean_stable
+
+
+
