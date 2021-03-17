@@ -14,18 +14,24 @@
 
 from __future__ import print_function
 
+import logging
 import os
 import subprocess
 import yaml
 
 from rhos_bootstrap import constants
+from rhos_bootstrap.utils import repos
+
+LOG = logging.getLogger(__name__)
 
 
 class DistributionInfo:
     """Distribution information"""
 
-    def __init__(self, distro_id=None, distro_version_id=None,
-                 distro_name=None):
+    def __init__(self,
+                 distro_id: str = None,
+                 distro_version_id: str = None,
+                 distro_name: str = None):
         """Distribution Information class"""
         _id, _version_id, _name = (None, None, None)
         if not distro_id or not distro_version_id or not distro_name:
@@ -39,9 +45,10 @@ class DistributionInfo:
                 universal_newlines=True).communicate()
             _id, _version_id, _name = output[0].split('\n')
 
-        self.distro_id = distro_id or _id
-        self.distro_version_id = distro_version_id or _version_id
-        self.distro_name = distro_name or _name
+        self._distro_id = distro_id or _id
+        self._distro_version_id = distro_version_id or _version_id
+        self._distro_name = distro_name or _name
+        self._is_stream = ('stream' in self._distro_name.lower())
         self._load_data()
 
     def _load_data(self):
@@ -51,16 +58,70 @@ class DistributionInfo:
             raise Exception('Unable to load distribution information from '
                             '{}'.format(data_path))
         with open(data_path, 'r') as data:
-            self.distro_data = yaml.safe_load(data.read())
+            self._distro_data = yaml.safe_load(data.read())
 
-    def get_distros(self):
-        return self.distro_data.get('distros', {})
+    @property
+    def distro_data(self):
+        return self._distro_data
 
-    def get_versions(self):
-        return self.distro_data.get('versions', {})
+    @property
+    def distro_id(self):
+        return self._distro_id
 
-    def get_version(self, version):
-        if version not in self.get_versions():
+    @property
+    def distro_version_id(self):
+        return self._distro_version_id
+
+    @property
+    def distro_major_version_id(self):
+        return self._distro_version_id.split('.')[0]
+
+    @property
+    def is_stream(self):
+        return self._is_stream
+
+    @property
+    def distro_name(self):
+        return self._distro_name
+
+    @property
+    def distros(self):
+        return self._distro_data.get('distros', {})
+
+    @property
+    def versions(self):
+        return self._distro_data.get('versions', {})
+
+    @property
+    def distro_normalized_id(self):
+        distro = f'{self.distro_id}{self.distro_major_version_id}'
+        if self.is_stream:
+            distro = distro + '-stream'
+        return distro
+
+    def __str__(self):
+        return self.distro_normalized_id
+
+    def get_version(self, version) -> dict:
+        if version not in self.versions:
             raise Exception('Version {} not defined in distribution '
                             'data'.format(version))
-        return self.get_versions().get(version, {})
+        return self.versions.get(version, {})
+
+    def get_repos(self, version) -> list:
+        r = []
+        dist = self.distro_normalized_id
+        version_data = self.get_version(version)
+        if dist not in version_data['repos']:
+            LOG.warning(f'{dist} missing from version repos')
+        if 'centos' in dist:
+            for repo in version_data['repos'].get(dist, []):
+                r.append(repos.TripleoCentosRepo(dist, repo))
+        if 'ceph' in version_data['repos']:
+            for repo in version_data['repos']['ceph']:
+                r.append(repos.TripleoCephRepo(dist, repo))
+        if 'delorean' in version_data['repos']:
+            distro = f'{self.distro_id}{self.distro_major_version_id}'
+            for repo in version_data['repos']['delorean']:
+                r.append(repos.TripleoDeloreanRepos(distro, version, repo))
+        return r

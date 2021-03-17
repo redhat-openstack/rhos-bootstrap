@@ -68,8 +68,13 @@ class BootstrapCli(object):
 def main():
     cli = BootstrapCli()
     args = cli.parse_args()
-    distro = distribution.DistributionInfo('centos', '8.2.1', 'Centos')
+    distro = distribution.DistributionInfo('centos', '8', 'CentOS Stream')
+    print(distro)
     pprint.pprint(distro.get_version(args.version))
+    repos = distro.get_repos(args.version)
+    pprint.pprint(repos)
+    for repo in repos:
+        print(repo)
 
 
 if __name__ == '__main__':

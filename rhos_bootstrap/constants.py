@@ -23,3 +23,26 @@ if sys.prefix != '/usr' and not os.path.isdir(SHARE_BASE_PATH):
     SHARE_BASE_PATH = os.path.join('/usr', 'share')
 
 RHOS_VERSIONS_DIR = os.path.join(SHARE_BASE_PATH, 'rhos-bootstrap')
+
+DEFAULT_MIRROR_MAP = {
+    'fedora': 'https://mirrors.fedoraproject.org',
+    'centos': 'http://mirror.centos.org',
+    'ubi': 'http://mirror.centos.org',
+    'rhel': 'https://trunk.rdoproject.org',
+    'rdo': 'https://trunk.rdoproject.org',
+}
+
+CENTOS_RELEASE_MAP = {
+    'centos8': '8',
+    'centos8-stream': '8-stream'
+}
+
+CENTOS_REPO_MAP = {
+    'baseos': 'BaseOS',
+    'appstream': 'AppStream',
+    'highavailability': 'HighAvailability',
+    'nfv': 'nfv',
+    'powertools': 'PowerTools',
+    'rt': 'RT',
+    'virt': 'virt',
+}
