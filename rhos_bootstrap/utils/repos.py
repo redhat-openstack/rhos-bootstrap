@@ -15,8 +15,20 @@
 from rhos_bootstrap.constants import DEFAULT_MIRROR_MAP
 from rhos_bootstrap.constants import CENTOS_RELEASE_MAP
 from rhos_bootstrap.constants import CENTOS_REPO_MAP
+from rhos_bootstrap.constants import YUM_REPO_BASE_DIR
+from rhos_bootstrap.exceptions import RepositoryNotSupported
 import os
 import requests
+
+
+class BaseRhsmRepo:
+    def __init__(self,
+                 name: str):
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
 
 
 class BaseYumRepo:
@@ -102,8 +114,8 @@ class BaseYumRepo:
         repo.append('')
         return "\n".join(repo)
 
-    def save(self, repo_path: str):
-        repo_dir = os.path.dirname(repo_path)
+    def save(self, repo_dir: str = YUM_REPO_BASE_DIR):
+        repo_path = os.path.join(repo_dir, f'{self.name}.repo')
         if not os.path.isdir(repo_dir):
             raise FileNotFoundError(f'{repo_dir} does not exist')
         elif not os.access(repo_dir, os.W_OK):
@@ -119,11 +131,14 @@ class TripleoCephRepo(BaseYumRepo):
                  centos_release: str,
                  ceph_release: str,
                  mirror: str = DEFAULT_MIRROR_MAP['centos']) -> None:
+        # NOTE(mwhahaha): 8-stream is currently not supported
+        if centos_release == 'centos8-stream':
+            centos_release = 'centos8'
         super(TripleoCephRepo, self).__init__(
             f'tripleo-centos-ceph-{ceph_release}',
             f'tripleo-centos-ceph-{ceph_release}',
-            (f'{mirror}/centos/{centos_release}/storage/$basearch/'
-             f'ceph-{ceph_release}/'),
+            (f'{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}'
+             f'/storage/$basearch/ceph-{ceph_release}/'),
             True,
             False)
 
@@ -134,12 +149,12 @@ class TripleoCentosRepo(BaseYumRepo):
                  repo: str,
                  mirror: str = DEFAULT_MIRROR_MAP['centos']) -> None:
         if repo not in CENTOS_REPO_MAP:
-            raise Exception(f'Unknown repo ({repo})')
+            raise RepositoryNotSupported(repo)
         super(TripleoCentosRepo, self).__init__(
             f'tripleo-centos-{repo}',
             f'tripleo-centos-{repo}',
-            (f'{mirror}/centos/{centos_release}/{CENTOS_REPO_MAP[repo]}/'
-             '$basearch/os/'),
+            (f'{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}/'
+             f'{CENTOS_REPO_MAP[repo]}/$basearch/os/'),
             True,
             False)
 
@@ -155,7 +170,12 @@ class TripleoDeloreanRepos:
             uri = f'{self._base_uri}/delorean-deps.repo'
         else:
             uri = f'{self._base_uri}/{repo}/delorean.repo'
+        self._name = f'tripleo-delorean-{repo}'
         self._repo_data = self._get_repo(uri)
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def repo_data(self) -> str:
@@ -170,8 +190,8 @@ class TripleoDeloreanRepos:
     def __str__(self) -> str:
         return self.repo_data
 
-    def save(self, repo_path: str):
-        repo_dir = os.path.dirname(repo_path)
+    def save(self, repo_dir: str = YUM_REPO_BASE_DIR):
+        repo_path = os.path.join(repo_dir, f'{self.name}.repo')
         if not os.path.isdir(repo_dir):
             raise FileNotFoundError(f'{repo_dir} does not exist')
         elif not os.access(repo_dir, os.W_OK):

@@ -17,6 +17,8 @@ import libdnf
 import logging
 import yaml
 
+from dnf.cli.cli import Cli
+
 LOG = logging.getLogger(__name__)
 
 STATE_DEFAULT = libdnf.module.ModulePackageContainer.ModuleState_DEFAULT
@@ -25,9 +27,15 @@ STATE_DISABLED = libdnf.module.ModulePackageContainer.ModuleState_DISABLED
 STATE_UNKNOWN = libdnf.module.ModulePackageContainer.ModuleState_UNKNOWN
 
 
-class DnfModules(object):
+class DnfModuleManager(object):
     def __init__(self):
         self.dnf_base = dnf.Base()
+        # https://gerrit.ovirt.org/c/otopi/+/112682/9/src/otopi/minidnf.py
+        self.cli = Cli(self.dnf_base)
+        # TODO(mwhahaha): fix the logging
+        self.cli._read_conf_file()
+        logging.getLogger('dnf').setLevel(logging.ERROR)
+        self.dnf_base.init_plugins(disabled_glob=[], cli=self.cli)
         self.dnf_base.read_all_repos()
         self.dnf_base.fill_sack()
         self.module_base = dnf.module.module_base.ModuleBase(self.dnf_base)
@@ -158,3 +166,23 @@ class DnfModules(object):
         self.module_base.install([self._build_module_string(name, stream,
                                                             profile)], True)
         self._commit()
+
+
+class DnfModule:
+    def __init__(self, name: str, stream: str, profile: str = None):
+        self._name = name
+        # Ensure stream is a string because some things like 2.0 get floated
+        self._stream = str(stream)
+        self._profile = profile
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def stream(self):
+        return self._stream
+
+    @property
+    def profile(self):
+        return self._profile

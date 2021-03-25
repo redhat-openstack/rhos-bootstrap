@@ -20,7 +20,9 @@ import subprocess
 import yaml
 
 from rhos_bootstrap import constants
+from rhos_bootstrap import exceptions
 from rhos_bootstrap.utils import repos
+from rhos_bootstrap.utils import dnf
 
 LOG = logging.getLogger(__name__)
 
@@ -55,8 +57,8 @@ class DistributionInfo:
         data_path = os.path.join(constants.RHOS_VERSIONS_DIR,
                                  "{}.yaml".format(self.distro_id))
         if not os.path.exists(data_path):
-            raise Exception('Unable to load distribution information from '
-                            '{}'.format(data_path))
+            LOG.error(f"{data_path} does not exist")
+            raise exceptions.DistroNotSupported(self.distro_id)
         with open(data_path, 'r') as data:
             self._distro_data = yaml.safe_load(data.read())
 
@@ -104,8 +106,8 @@ class DistributionInfo:
 
     def get_version(self, version) -> dict:
         if version not in self.versions:
-            raise Exception('Version {} not defined in distribution '
-                            'data'.format(version))
+            LOG.error(f"{version} is not available in version list")
+            raise exceptions.VersionNotSupported(version)
         return self.versions.get(version, {})
 
     def get_repos(self, version) -> list:
@@ -124,4 +126,11 @@ class DistributionInfo:
             distro = f'{self.distro_id}{self.distro_major_version_id}'
             for repo in version_data['repos']['delorean']:
                 r.append(repos.TripleoDeloreanRepos(distro, version, repo))
+        return r
+
+    def get_modules(self, version) -> list:
+        r = []
+        module_data = self.get_version(version).get('modules', {})
+        for mod in module_data.keys():
+            r.append(dnf.DnfModule(mod, module_data[mod]))
         return r

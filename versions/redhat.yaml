@@ -1,0 +1,37 @@
+---
+###########
+# Distros #
+###########
+distros:
+  redhat:
+    versions:
+      - 8.2
+
+######################
+# OpenStack versions #
+######################
+versions:
+  16.1:
+    distros:
+      - rhel8.2
+    repos:
+      rhel8.2:
+        - rhel-8-for-x86_64-baseos-eus-rpms
+        - rhel-8-for-x86_64-appstream-eus-rpms
+        - rhel-8-for-x86_64-highavailability-eus-rpms
+      ansible:
+        - ansible-2.9-for-rhel-8-x86_64-rpms
+      virt:
+        - advanced-virt-for-rhel-8-x86_64-rpms
+      ceph:
+        - rhceph-4-tools-for-rhel-8-x86_64-rpms
+      openstack:
+        - openstack-16.1-for-rhel-8-x86_64-rpms
+      satellite:
+        - satellite-tools-6.5-for-rhel-8-x86_64-rpms
+      openvswitch:
+        - fast-datapath-for-rhel-8-x86_64-rpms
+    modules:
+      container-tools: 2.0
+      virt: rhel
+      python36: 3.6

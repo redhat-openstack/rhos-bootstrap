@@ -14,17 +14,19 @@
 
 from __future__ import print_function
 import argparse
-import pprint
+import logging
+import os
+import sys
 
 from rhos_bootstrap import distribution
+from rhos_bootstrap.utils.dnf import DnfModuleManager
+
+LOG = logging.getLogger(__name__)
 
 
 class BootstrapCli(object):
     def __init__(self):
-        pass
-
-    def parse_args(self):
-        parser = argparse.ArgumentParser(
+        self._parser = argparse.ArgumentParser(
             description='Perform basic bootrstrap related functions when '
                         'installing, updating, or upgrading OpenStack on '
                         'Red Hat based systems. This tool can manage '
@@ -33,48 +35,87 @@ class BootstrapCli(object):
                         'perform repository validations for the target '
                         'version')
 
-        parser.add_argument('version',
-                            help='The target OpenStack version to configure '
-                                 'this system to use when fetching packages.')
-        parser.add_argument('--enable-ceph-install',
-                            action='store_true',
-                            default=False,
-                            help='Perform ceph related configuration actions')
-        parser.add_argument('--skip-repos',
-                            action='store_true',
-                            default=False,
-                            help='Skip repository configuration related '
-                                 'actions')
-        parser.add_argument('--skip-modules',
-                            action='store_true',
-                            default=False,
-                            help='Skip module configuration related actions')
-        parser.add_argument('--skip-client-install',
-                            action='store_true',
-                            default=False,
-                            help='Skip tripleoclient installation')
-        parser.add_argument('--skip-validation',
-                            action='store_true',
-                            help='Skip version validation')
-        parser.add_argument('--update-and-reboot',
-                            action='store_true',
-                            help='Perform a system update and issue a reboot '
-                                 'after configuring the system repositories '
-                                 'and modules configuration.')
-        args = parser.parse_args()
+    @property
+    def parser(self):
+        return self._parser
+
+    def parse_args(self):
+        self.parser.add_argument('version',
+                                 help=('The target OpenStack version to '
+                                       'configure this system to use when '
+                                       'fetching packages.'))
+        self.parser.add_argument('--enable-ceph-install',
+                                 action='store_true',
+                                 default=False,
+                                 help=('Perform ceph related configuration '
+                                       'actions'))
+        self.parser.add_argument('--skip-repos',
+                                 action='store_true',
+                                 default=False,
+                                 help=('Skip repository configuration related '
+                                       'actions'))
+        self.parser.add_argument('--skip-modules',
+                                 action='store_true',
+                                 default=False,
+                                 help=('Skip module configuration related '
+                                       'actions'))
+        self.parser.add_argument('--skip-client-install',
+                                 action='store_true',
+                                 default=False,
+                                 help='Skip tripleoclient installation')
+        self.parser.add_argument('--skip-validation',
+                                 action='store_true',
+                                 help='Skip version validation')
+        self.parser.add_argument('--update-and-reboot',
+                                 action='store_true',
+                                 help=('Perform a system update and issue a '
+                                       'reboot after configuring the system '
+                                       'repositories and modules '
+                                       'configuration.'))
+        self.parser.add_argument('--debug',
+                                 action='store_true',
+                                 default=False,
+                                 help='Enable debug logging')
+        args = self.parser.parse_args()
         return args
 
 
 def main():
     cli = BootstrapCli()
     args = cli.parse_args()
+
+    log_level = logging.INFO
+    if args.debug:
+        log_level = logging.DEBUG
+
+    logging.basicConfig(format='[%(levelname)s]: %(message)s', level=log_level)
+
+    if os.getuid() != 0:
+        LOG.error('You must be root to run this command')
+        cli.parser.print_help()
+        sys.exit(2)
+
     distro = distribution.DistributionInfo('centos', '8', 'CentOS Stream')
-    print(distro)
-    pprint.pprint(distro.get_version(args.version))
-    repos = distro.get_repos(args.version)
-    pprint.pprint(repos)
-    for repo in repos:
-        print(repo)
+    if not args.skip_repos:
+        # TODO(mwhahaha): handle skip ceph
+        repos = distro.get_repos(args.version)
+        LOG.info("Configuring repositories....")
+        for repo in repos:
+            LOG.debug(repo.name)
+            LOG.info(f"Saving {repo.name}")
+            repo.save()
+    else:
+        LOG.info('Skipping repository configuration...')
+
+    if not args.skip_modules:
+        modules = distro.get_modules(args.version)
+        LOG.info("Configuring modules....")
+        manager = DnfModuleManager()
+        for mod in modules:
+            LOG.info(f'Enabling {mod.name}:{mod.stream}')
+            manager.enable(mod.name, mod.stream, mod.profile)
+    else:
+        LOG.info('Skipping module configuration...')
 
 
 if __name__ == '__main__':

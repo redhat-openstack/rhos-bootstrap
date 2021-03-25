@@ -24,6 +24,8 @@ if sys.prefix != '/usr' and not os.path.isdir(SHARE_BASE_PATH):
 
 RHOS_VERSIONS_DIR = os.path.join(SHARE_BASE_PATH, 'rhos-bootstrap')
 
+YUM_REPO_BASE_DIR = '/etc/yum.repos.d'
+
 DEFAULT_MIRROR_MAP = {
     'fedora': 'https://mirrors.fedoraproject.org',
     'centos': 'http://mirror.centos.org',
