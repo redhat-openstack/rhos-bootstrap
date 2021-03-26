@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import requests
+
 from rhos_bootstrap.constants import DEFAULT_MIRROR_MAP
 from rhos_bootstrap.constants import CENTOS_RELEASE_MAP
 from rhos_bootstrap.constants import CENTOS_REPO_MAP
 from rhos_bootstrap.constants import YUM_REPO_BASE_DIR
 from rhos_bootstrap.exceptions import RepositoryNotSupported
-import os
-import requests
 
 
-class BaseRhsmRepo:
-    def __init__(self,
-                 name: str):
+class BaseRhsmRepo:  # pylint: disable=too-few-public-methods
+    """Base repo object for rhsm"""
+
+    def __init__(self, name: str):
         self._name = name
 
     @property
@@ -31,16 +33,20 @@ class BaseRhsmRepo:
         return self._name
 
 
-class BaseYumRepo:
-    def __init__(self,
-                 name: str,
-                 description: str,
-                 baseurl: str,
-                 enabled: bool,
-                 gpgcheck: bool,
-                 mirrorlist: str = None,
-                 metalink: str = None,
-                 gpgkey: str = None) -> None:
+class BaseYumRepo:  # pylint: disable=too-many-instance-attributes
+    """Base repo object for yum"""
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        baseurl: str,
+        enabled: bool,
+        gpgcheck: bool,
+        mirrorlist: str = None,
+        metalink: str = None,
+        gpgkey: str = None,
+    ) -> None:
         self._name = name
         self._description = description
         self._baseurl = baseurl
@@ -64,7 +70,7 @@ class BaseYumRepo:
 
     @property
     def enabled(self):
-        return (self._enabled == 1)
+        return self._enabled == 1
 
     @enabled.setter
     def enabled(self, enabled_setting: bool):
@@ -75,7 +81,7 @@ class BaseYumRepo:
 
     @property
     def gpgcheck(self):
-        return (self._gpgcheck == 1)
+        return self._gpgcheck == 1
 
     @gpgcheck.setter
     def gpgcheck(self, gpgcheck_setting):
@@ -98,79 +104,94 @@ class BaseYumRepo:
 
     def __str__(self) -> str:
         repo = [
-            f'[{self.name}]',
-            f'name={self.description}',
+            f"[{self.name}]",
+            f"name={self.description}",
         ]
         if self.baseurl:
-            repo.append(f'baseurl={self.baseurl}')
+            repo.append(f"baseurl={self.baseurl}")
         if self.mirrorlist:
-            repo.append(f'mirrorlist={self.mirrorlist}')
+            repo.append(f"mirrorlist={self.mirrorlist}")
         if self.metalink:
-            repo.append(f'metalink={self.metalink}')
-        repo.append(f'enabled={self._enabled}')
-        repo.append(f'gpgcheck={self._gpgcheck}')
+            repo.append(f"metalink={self.metalink}")
+        repo.append(f"enabled={self._enabled}")
+        repo.append(f"gpgcheck={self._gpgcheck}")
         if self.gpgkey:
-            repo.append(f'gpgkey={self.gpgkey}')
-        repo.append('')
+            repo.append(f"gpgkey={self.gpgkey}")
+        repo.append("")
         return "\n".join(repo)
 
     def save(self, repo_dir: str = YUM_REPO_BASE_DIR):
-        repo_path = os.path.join(repo_dir, f'{self.name}.repo')
+        repo_path = os.path.join(repo_dir, f"{self.name}.repo")
         if not os.path.isdir(repo_dir):
-            raise FileNotFoundError(f'{repo_dir} does not exist')
-        elif not os.access(repo_dir, os.W_OK):
-            raise PermissionError(f'{repo_dir} is not writable')
-        elif os.path.isfile(repo_path) and not os.access(repo_path, os.W_OK):
-            raise PermissionError(f'{repo_path} is not writable')
-        with open(repo_path, 'w') as f:
+            raise FileNotFoundError(f"{repo_dir} does not exist")
+        if not os.access(repo_dir, os.W_OK):
+            raise PermissionError(f"{repo_dir} is not writable")
+        if os.path.isfile(repo_path) and not os.access(repo_path, os.W_OK):
+            raise PermissionError(f"{repo_path} is not writable")
+        with open(repo_path, "w") as f:
             f.write(str(self))
 
 
 class TripleoCephRepo(BaseYumRepo):
-    def __init__(self,
-                 centos_release: str,
-                 ceph_release: str,
-                 mirror: str = DEFAULT_MIRROR_MAP['centos']) -> None:
+    """Upstream Ceph Repo"""
+
+    def __init__(
+        self,
+        centos_release: str,
+        ceph_release: str,
+        mirror: str = DEFAULT_MIRROR_MAP["centos"],
+    ) -> None:
         # NOTE(mwhahaha): 8-stream is currently not supported
-        if centos_release == 'centos8-stream':
-            centos_release = 'centos8'
-        super(TripleoCephRepo, self).__init__(
-            f'tripleo-centos-ceph-{ceph_release}',
-            f'tripleo-centos-ceph-{ceph_release}',
-            (f'{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}'
-             f'/storage/$basearch/ceph-{ceph_release}/'),
+        if centos_release == "centos8-stream":
+            centos_release = "centos8"
+        super().__init__(
+            f"tripleo-centos-ceph-{ceph_release}",
+            f"tripleo-centos-ceph-{ceph_release}",
+            (
+                f"{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}"
+                f"/storage/$basearch/ceph-{ceph_release}/"
+            ),
             True,
-            False)
+            False,
+        )
 
 
 class TripleoCentosRepo(BaseYumRepo):
-    def __init__(self,
-                 centos_release: str,
-                 repo: str,
-                 mirror: str = DEFAULT_MIRROR_MAP['centos']) -> None:
+    """Upstream CentOS Repo"""
+
+    def __init__(
+        self, centos_release: str, repo: str, mirror: str = DEFAULT_MIRROR_MAP["centos"]
+    ) -> None:
         if repo not in CENTOS_REPO_MAP:
             raise RepositoryNotSupported(repo)
-        super(TripleoCentosRepo, self).__init__(
-            f'tripleo-centos-{repo}',
-            f'tripleo-centos-{repo}',
-            (f'{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}/'
-             f'{CENTOS_REPO_MAP[repo]}/$basearch/os/'),
+        super().__init__(
+            f"tripleo-centos-{repo}",
+            f"tripleo-centos-{repo}",
+            (
+                f"{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}/"
+                f"{CENTOS_REPO_MAP[repo]}/$basearch/os/"
+            ),
             True,
-            False)
+            False,
+        )
 
 
 class TripleoDeloreanRepos:
-    def __init__(self,
-                 distro: str,
-                 version: str,
-                 repo: str,
-                 mirror: str = DEFAULT_MIRROR_MAP['rdo']) -> None:
-        self._base_uri = f'{mirror}/{distro}-{version}/'
-        if repo == 'deps':
-            uri = f'{self._base_uri}/delorean-deps.repo'
+    """Upstream RDO Repo"""
+
+    def __init__(
+        self,
+        distro: str,
+        version: str,
+        repo: str,
+        mirror: str = DEFAULT_MIRROR_MAP["rdo"],
+    ) -> None:
+        self._base_uri = f"{mirror}/{distro}-{version}/"
+        if repo == "deps":
+            uri = f"{self._base_uri}/delorean-deps.repo"
         else:
-            uri = f'{self._base_uri}/{repo}/delorean.repo'
-        self._name = f'tripleo-delorean-{repo}'
+            uri = f"{self._base_uri}/{repo}/delorean.repo"
+        self._name = f"tripleo-delorean-{repo}"
         self._repo_data = self._get_repo(uri)
 
     @property
@@ -191,12 +212,12 @@ class TripleoDeloreanRepos:
         return self.repo_data
 
     def save(self, repo_dir: str = YUM_REPO_BASE_DIR):
-        repo_path = os.path.join(repo_dir, f'{self.name}.repo')
+        repo_path = os.path.join(repo_dir, f"{self.name}.repo")
         if not os.path.isdir(repo_dir):
-            raise FileNotFoundError(f'{repo_dir} does not exist')
-        elif not os.access(repo_dir, os.W_OK):
-            raise PermissionError(f'{repo_dir} is not writable')
-        elif os.path.isfile(repo_path) and not os.access(repo_path, os.W_OK):
-            raise PermissionError(f'{repo_path} is not writable')
-        with open(repo_path, 'w') as f:
+            raise FileNotFoundError(f"{repo_dir} does not exist")
+        if not os.access(repo_dir, os.W_OK):
+            raise PermissionError(f"{repo_dir} is not writable")
+        if os.path.isfile(repo_path) and not os.access(repo_path, os.W_OK):
+            raise PermissionError(f"{repo_path} is not writable")
+        with open(repo_path, "w") as f:
             f.write(str(self))

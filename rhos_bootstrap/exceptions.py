@@ -15,23 +15,26 @@
 
 class DistroNotSupported(Exception):
     """Distribution is not supported"""
-    def __init__(self,
-                 distro_id: str,
-                 message: str = "Distribution {} is not currently supported"):
+
+    def __init__(
+        self,
+        distro_id: str,
+        message: str = "Distribution {} is not currently supported",
+    ):
         super().__init__(message.format(distro_id))
 
 
 class VersionNotSupported(Exception):
     """Version is not supported"""
-    def __init__(self,
-                 version: str,
-                 message: str = "Version {} is not currently supported"):
+
+    def __init__(
+        self, version: str, message: str = "Version {} is not currently supported"
+    ):
         super().__init__(message.format(version))
 
 
 class RepositoryNotSupported(Exception):
     """Unknown repository"""
-    def __init__(self,
-                 repo: str,
-                 message: str = "Repository {} is unknown"):
+
+    def __init__(self, repo: str, message: str = "Repository {} is unknown"):
         super().__init__(message.format(repo))

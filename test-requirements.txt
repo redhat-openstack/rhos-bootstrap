@@ -1,0 +1,6 @@
+fixtures
+nose
+coverage
+pylint
+black
+requests-mock

@@ -17,10 +17,12 @@ import subprocess
 
 
 class SubscriptionManager:
+    """Subscription manager interactions"""
+
     def __init__(self):
-        self._exe = shutil.which('subscription-manager')
-        if not self._exec:
-            raise Exception('subscrition-manager not available in PATH')
+        self._exe = shutil.which("subscription-manager")
+        if not self._exe:
+            raise Exception("subscrition-manager not available in PATH")
 
     @property
     def exe(self):
@@ -28,12 +30,10 @@ class SubscriptionManager:
 
     def run(self, args: list):
         cmd = [self.exe] + args
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                universal_newlines=True)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
         out, err = proc.communicate()
         rc = proc.returncode
 
         if rc != 0:
             raise Exception(err)
-        else:
-            return rc, out, err
+        return rc, out, err

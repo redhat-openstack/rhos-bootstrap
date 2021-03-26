@@ -18,33 +18,30 @@ import sys
 # NOTE(mwhahaha): So if we pip install this, we need to also
 # honor pulling some other files from a venv. This logic will create a
 # constant for a venv share path.
-SHARE_BASE_PATH = os.path.join(sys.prefix, 'share')
-if sys.prefix != '/usr' and not os.path.isdir(SHARE_BASE_PATH):
-    SHARE_BASE_PATH = os.path.join('/usr', 'share')
+SHARE_BASE_PATH = os.path.join(sys.prefix, "share")
+if sys.prefix != "/usr" and not os.path.isdir(SHARE_BASE_PATH):
+    SHARE_BASE_PATH = os.path.join("/usr", "share")
 
-RHOS_VERSIONS_DIR = os.path.join(SHARE_BASE_PATH, 'rhos-bootstrap')
+RHOS_VERSIONS_DIR = os.path.join(SHARE_BASE_PATH, "rhos-bootstrap")
 
-YUM_REPO_BASE_DIR = '/etc/yum.repos.d'
+YUM_REPO_BASE_DIR = "/etc/yum.repos.d"
 
 DEFAULT_MIRROR_MAP = {
-    'fedora': 'https://mirrors.fedoraproject.org',
-    'centos': 'http://mirror.centos.org',
-    'ubi': 'http://mirror.centos.org',
-    'rhel': 'https://trunk.rdoproject.org',
-    'rdo': 'https://trunk.rdoproject.org',
+    "fedora": "https://mirrors.fedoraproject.org",
+    "centos": "http://mirror.centos.org",
+    "ubi": "http://mirror.centos.org",
+    "rhel": "https://trunk.rdoproject.org",
+    "rdo": "https://trunk.rdoproject.org",
 }
 
-CENTOS_RELEASE_MAP = {
-    'centos8': '8',
-    'centos8-stream': '8-stream'
-}
+CENTOS_RELEASE_MAP = {"centos8": "8", "centos8-stream": "8-stream"}
 
 CENTOS_REPO_MAP = {
-    'baseos': 'BaseOS',
-    'appstream': 'AppStream',
-    'highavailability': 'HighAvailability',
-    'nfv': 'nfv',
-    'powertools': 'PowerTools',
-    'rt': 'RT',
-    'virt': 'virt',
+    "baseos": "BaseOS",
+    "appstream": "AppStream",
+    "highavailability": "HighAvailability",
+    "nfv": "nfv",
+    "powertools": "PowerTools",
+    "rt": "RT",
+    "virt": "virt",
 }
