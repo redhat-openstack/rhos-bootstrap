@@ -147,8 +147,7 @@ class DistributionInfo:
                 if "centos" in self.distro_normalized_id:
                     r.append(repos.TripleoCephRepo(dist, repo))
                 else:
-                    # TODO: handle ceph rhel repos
-                    pass
+                    NotImplementedError("Ceph on RHEL not yet implemented")
         if "delorean" in version_data["repos"]:
             distro = f"{self.distro_id}{self.distro_major_version_id}"
             for repo in version_data["repos"]["delorean"]:

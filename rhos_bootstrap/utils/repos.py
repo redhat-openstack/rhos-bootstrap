@@ -205,7 +205,7 @@ class TripleoDeloreanRepos:
     def _get_repo(self, uri) -> str:
         r = requests.get(uri)
         r.raise_for_status()
-        # TODO: inject mirror?
+        # NOTE(mwhahaha): May want to inject mirror here
         return r.text
 
     def __str__(self) -> str:

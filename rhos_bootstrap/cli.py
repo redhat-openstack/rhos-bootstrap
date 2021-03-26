@@ -19,6 +19,7 @@ import os
 import sys
 
 from rhos_bootstrap import distribution
+from rhos_bootstrap.exceptions import DistroNotSupported
 from rhos_bootstrap.utils.dnf import DnfManager
 
 LOG = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ def main():  # pylint: disable=too-many-branches
     if not args.skip_validation:
         LOG.info("=== Validating version for distro...")
         if not distro.validate_distro(args.version):
-            raise RuntimeError("Distro not supported for this version")
+            raise DistroNotSupported("Distro not supported for this version")
         LOG.info("OK! {} on {}", args.version, distro.distro_normalized_id)
     else:
         LOG.info("=== Skipping validation of version for distro...")

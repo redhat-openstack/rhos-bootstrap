@@ -16,7 +16,57 @@ import unittest
 from rhos_bootstrap.utils import repos
 
 
-class TestTripleoRepos(unittest.TestCase):
+class TestRhsmRepos(unittest.TestCase):
+    def test_base(self):
+        obj = repos.BaseRhsmRepo("foo")
+        self.assertEqual(obj.name, "foo")
+
+
+class TestYumRepos(unittest.TestCase):
+    def test_base(self):
+        obj = repos.BaseYumRepo("foo", "bar", "url", True, False)
+        self.assertEqual(obj.name, "foo")
+        self.assertEqual(obj.description, "bar")
+        self.assertEqual(obj.baseurl, "url")
+        self.assertTrue(obj.enabled)
+        self.assertEqual(obj._enabled, 1)
+        self.assertFalse(obj.gpgcheck)
+        self.assertFalse(obj._gpgcheck, 0)
+        self.assertEqual(obj.mirrorlist, None)
+        self.assertEqual(obj.metalink, None)
+        self.assertEqual(obj.gpgkey, None)
+
+        obj.enabled = False
+        self.assertFalse(obj.enabled)
+        self.assertEqual(obj._enabled, 0)
+
+        obj.gpgcheck = True
+        self.assertTrue(obj.gpgcheck)
+        self.assertEqual(obj._gpgcheck, 1)
+
+    def test_base_to_string(self):
+        obj = repos.BaseYumRepo(
+            "foo", "bar", "url", True, False, "mirror", "meta", "gpg"
+        )
+        expected = "\n".join(
+            [
+                "[foo]",
+                "name=bar",
+                "baseurl=url",
+                "mirrorlist=mirror",
+                "metalink=meta",
+                "enabled=1",
+                "gpgcheck=0",
+                "gpgkey=gpg",
+                "",
+            ]
+        )
+        self.assertEqual(str(obj), expected)
+
     def test_ceph(self):
-        obj = repos.TripleoCephRepo('centos8-stream', 'pacific')
-        self.assertEqual(obj.name, 'tripleo-centos-ceph-pacific')
+        obj = repos.TripleoCephRepo("centos8-stream", "pacific")
+        self.assertEqual(obj.name, "tripleo-centos-ceph-pacific")
+
+    def test_centos(self):
+        obj = repos.TripleoCentosRepo("centos8-stream", "highavailability")
+        self.assertEqual(obj.name, "tripleo-centos-highavailability")
