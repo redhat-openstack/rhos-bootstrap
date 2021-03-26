@@ -79,6 +79,14 @@ class DistributionInfo:
         return self._distro_version_id.split('.')[0]
 
     @property
+    def distro_minor_version_id(self):
+        if len(self._distro_version_id.split('.')) < 2:
+            # CentOS Stream doesn't have a minor version
+            return ''
+        else:
+            return self._distro_version_id.split('.')[1]
+
+    @property
     def is_stream(self):
         return self._is_stream
 
@@ -96,13 +104,22 @@ class DistributionInfo:
 
     @property
     def distro_normalized_id(self):
-        distro = f'{self.distro_id}{self.distro_major_version_id}'
+        ver = [self.distro_id,
+               self.distro_major_version_id,
+               self.distro_minor_version_id]
         if self.is_stream:
-            distro = distro + '-stream'
-        return distro
+            ver.append('-stream')
+        return ''.join(ver)
 
     def __str__(self):
         return self.distro_normalized_id
+
+    def validate_distro(self, version) -> bool:
+        distros = self.versions[version].get('distros', [])
+        if self.distro_normalized_id not in distros:
+            LOG.warning(f'{self.distro_normalized_id} not in {distros}')
+            return False
+        return True
 
     def get_version(self, version) -> dict:
         if version not in self.versions:

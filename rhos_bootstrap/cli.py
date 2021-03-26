@@ -102,6 +102,14 @@ def main():
     distro = distribution.DistributionInfo()
     LOG.info(f'=== Distribution: {distro.distro_normalized_id}')
     LOG.info('=' * 40)
+    if not args.skip_validation:
+        LOG.info('=== Validating version for distro...')
+        if not distro.validate_distro(args.version):
+            raise RuntimeError('Distro not supported for this version')
+        LOG.info(f'OK! {args.version} on {distro.distro_normalized_id}')
+    else:
+        LOG.info('=== Skipping validation of version for distro...')
+
     if not args.skip_repos:
         repos = distro.get_repos(args.version,
                                  enable_ceph=not args.skip_ceph_install)
@@ -130,6 +138,7 @@ def main():
     if args.update_packages:
         LOG.info('=== Performing update...')
         manager.update_package('*')
+        LOG.info('NOTE: A manual reboot may be required')
 
     if not args.skip_client_install:
         LOG.info('=== Installing tripleoclient...')
