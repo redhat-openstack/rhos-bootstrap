@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import dnf
+import dnf.logging
 import libdnf
 import logging
 import yaml
 
 from dnf.cli.cli import Cli
+from dnf.exceptions import MarkingError
 
 LOG = logging.getLogger(__name__)
 
@@ -27,16 +29,28 @@ STATE_DISABLED = libdnf.module.ModulePackageContainer.ModuleState_DISABLED
 STATE_UNKNOWN = libdnf.module.ModulePackageContainer.ModuleState_UNKNOWN
 
 
-class DnfModuleManager(object):
+class DnfManager(object):
+    class _DnfLogging(dnf.logging.Logging):
+        """Dnf logging extention"""
+        def _setup_file_loggers(self, logfile_level, logdir, log_size,
+                                log_rotate, log_compress):
+            """Skip file logging setup"""
+
+        def _setup(self, verbose_level, error_level, logfile_level, logdir,
+                   log_size, log_rotate, log_compress):
+            """Skip regular logging setup"""
+
     def __init__(self):
         self.dnf_base = dnf.Base()
+        self.dnf_base._logging = self._DnfLogging()
+        self.dnf_base.conf.best = True
         # https://gerrit.ovirt.org/c/otopi/+/112682/9/src/otopi/minidnf.py
         self.cli = Cli(self.dnf_base)
-        # TODO(mwhahaha): fix the logging
         self.cli._read_conf_file()
-        logging.getLogger('dnf').setLevel(logging.ERROR)
         self.dnf_base.init_plugins(disabled_glob=[], cli=self.cli)
+        self.dnf_base.pre_configure_plugins()
         self.dnf_base.read_all_repos()
+        self.dnf_base.configure_plugins()
         self.dnf_base.fill_sack()
         self.module_base = dnf.module.module_base.ModuleBase(self.dnf_base)
         self.all_modules = []
@@ -76,6 +90,21 @@ class DnfModuleManager(object):
             elif state == STATE_UNKNOWN:
                 self.unknown_modules[name] = mod
 
+    def _process_packages(self):
+        LOG.debug('Handling package tranaction')
+        self.dnf_base.resolve(allow_erasing=True)
+        self.dnf_base.download_packages(self.dnf_base.transaction.install_set)
+        for p in self.dnf_base.transaction.install_set:
+            res, err = self.dnf_base.package_signature_check(p)
+            if res == 1:
+                def _ask(data):
+                    LOG.info(("Importing GPG "
+                              f"{data['userid']}-{data['hexkeyid']}"))
+                    return True
+                self.dnf_base.package_import_key(p, fullakscb=_ask)
+            elif res != 0:
+                raise RuntimeError(err)
+
     def _commit(self):
         LOG.debug('committing changes')
         try:
@@ -112,7 +141,7 @@ class DnfModuleManager(object):
             })
         return all_modules
 
-    def disable(self, name, stream=None, profile=None):
+    def disable_module(self, name, stream=None, profile=None):
         if name not in self.enabled_modules:
             LOG.debug('missing from enabled_modules')
             return
@@ -135,7 +164,7 @@ class DnfModuleManager(object):
                                                             profile)])
         self._commit()
 
-    def enable(self, name, stream=None, profile=None):
+    def enable_module(self, name, stream=None, profile=None):
         if name in self.enabled_modules:
             if stream and stream in self.enabled_modules[name]['stream']:
                 # already enabled, noop
@@ -148,13 +177,13 @@ class DnfModuleManager(object):
                                                            profile)])
         self._commit()
 
-    def reset(self, name, stream=None, profile=None):
+    def reset_module(self, name, stream=None, profile=None):
         LOG.debug('calling reset')
         self.module_base.reset([self._build_module_string(name, stream,
                                                           profile)])
         self._commit()
 
-    def install(self, name, stream=None, profile=None):
+    def install_module(self, name, stream=None, profile=None):
         if name in self.enabled_modules:
             if stream and stream in self.enabled_modules[name]['stream']:
                 # already enabled, noop
@@ -162,10 +191,48 @@ class DnfModuleManager(object):
                 return
             self.reset(name, self.enabled_modules[name]['stream'])
 
-        LOG.debug('calling install')
+        LOG.debug('Calling module install')
         self.module_base.install([self._build_module_string(name, stream,
                                                             profile)], True)
         self._commit()
+
+    def install_package(self, name):
+        LOG.debug('Installing package')
+        self.dnf_base.cmds = ['install', name]
+        self.dnf_base.install(name)
+        self._process_packages()
+        self._commit()
+        self.dnf_base.cmds = None
+
+    def update_package(self, name):
+        LOG.debug('Updating package')
+        self.dnf_base.cmds = ['upgrade', name]
+        self.dnf_base.upgrade(name)
+        self._process_packages()
+        self._commit()
+        self.dnf_base.cmds = None
+
+    def install_update_package(self, name):
+        LOG.debug('Attempting package install/update')
+        self.dnf_base.cmds = ['install', name]
+        self.dnf_base.install(name)
+        try:
+            self.dnf_base.upgrade(name)
+            self.dnf_base.cmds = ['upgrade', name]
+        except MarkingError:
+            LOG.debug('Packaging being installed, skipping update')
+            pass
+        self._process_packages()
+        self._commit()
+        self.dnf_base.cmds = None
+
+    def remove_package(self, name):
+        LOG.debug('Removing package')
+        self.dnf_base.cmds = ['remove', name]
+        self.dnf_base.remove(name)
+        self._process_packages()
+        self._commit()
+        self.dnf_base.cmds = None
 
 
 class DnfModule:

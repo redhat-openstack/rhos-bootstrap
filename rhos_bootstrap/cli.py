@@ -19,7 +19,7 @@ import os
 import sys
 
 from rhos_bootstrap import distribution
-from rhos_bootstrap.utils.dnf import DnfModuleManager
+from rhos_bootstrap.utils.dnf import DnfManager
 
 LOG = logging.getLogger(__name__)
 
@@ -44,34 +44,35 @@ class BootstrapCli(object):
                                  help=('The target OpenStack version to '
                                        'configure this system to use when '
                                        'fetching packages.'))
-        self.parser.add_argument('--enable-ceph-install',
+        self.parser.add_argument('--skip-validation',
                                  action='store_true',
-                                 default=False,
-                                 help=('Perform ceph related configuration '
-                                       'actions'))
+                                 help='Skip version validation')
         self.parser.add_argument('--skip-repos',
                                  action='store_true',
                                  default=False,
                                  help=('Skip repository configuration related '
+                                       'actions'))
+        self.parser.add_argument('--skip-ceph-install',
+                                 action='store_true',
+                                 default=False,
+                                 help=('Skip ceph related configuration '
                                        'actions'))
         self.parser.add_argument('--skip-modules',
                                  action='store_true',
                                  default=False,
                                  help=('Skip module configuration related '
                                        'actions'))
+        self.parser.add_argument('--update-packages',
+                                 action='store_true',
+                                 default=False,
+                                 help=('Perform a system update after '
+                                       'configuring the system '
+                                       'repositories and modules '
+                                       'configuration.'))
         self.parser.add_argument('--skip-client-install',
                                  action='store_true',
                                  default=False,
                                  help='Skip tripleoclient installation')
-        self.parser.add_argument('--skip-validation',
-                                 action='store_true',
-                                 help='Skip version validation')
-        self.parser.add_argument('--update-and-reboot',
-                                 action='store_true',
-                                 help=('Perform a system update and issue a '
-                                       'reboot after configuring the system '
-                                       'repositories and modules '
-                                       'configuration.'))
         self.parser.add_argument('--debug',
                                  action='store_true',
                                  default=False,
@@ -88,34 +89,54 @@ def main():
     if args.debug:
         log_level = logging.DEBUG
 
-    logging.basicConfig(format='[%(levelname)s]: %(message)s', level=log_level)
+    logging.basicConfig(format='[%(asctime)s] [%(levelname)s]: %(message)s',
+                        level=log_level)
 
     if os.getuid() != 0:
         LOG.error('You must be root to run this command')
         cli.parser.print_help()
         sys.exit(2)
 
-    distro = distribution.DistributionInfo('centos', '8', 'CentOS Stream')
+    LOG.info('=' * 40)
+    LOG.info(f'=== OpenStack Version: {args.version}')
+    distro = distribution.DistributionInfo()
+    LOG.info(f'=== Distribution: {distro.distro_normalized_id}')
+    LOG.info('=' * 40)
     if not args.skip_repos:
-        # TODO(mwhahaha): handle skip ceph
-        repos = distro.get_repos(args.version)
-        LOG.info("Configuring repositories....")
+        repos = distro.get_repos(args.version,
+                                 enable_ceph=not args.skip_ceph_install)
+        LOG.info('=== Configuring repositories....')
         for repo in repos:
             LOG.debug(repo.name)
             LOG.info(f"Saving {repo.name}")
             repo.save()
     else:
-        LOG.info('Skipping repository configuration...')
+        LOG.info('=== Skipping repository configuration...')
+
+    if not (args.skip_modules and not args.update_packages
+            and args.skip_client_install):
+        # we don't need a manager if we're not calling it
+        manager = DnfManager()
 
     if not args.skip_modules:
         modules = distro.get_modules(args.version)
-        LOG.info("Configuring modules....")
-        manager = DnfModuleManager()
+        LOG.info('=== Configuring modules...')
         for mod in modules:
             LOG.info(f'Enabling {mod.name}:{mod.stream}')
-            manager.enable(mod.name, mod.stream, mod.profile)
+            manager.enable_module(mod.name, mod.stream, mod.profile)
     else:
-        LOG.info('Skipping module configuration...')
+        LOG.info('=== Skipping module configuration...')
+
+    if args.update_packages:
+        LOG.info('=== Performing update...')
+        manager.update_package('*')
+
+    if not args.skip_client_install:
+        LOG.info('=== Installing tripleoclient...')
+        manager.install_update_package('python3-tripleoclient')
+    else:
+        LOG.info('=== Skipping tripleoclient installation...')
+    LOG.info('=== Done!')
 
 
 if __name__ == '__main__':

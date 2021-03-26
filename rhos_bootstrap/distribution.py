@@ -110,7 +110,7 @@ class DistributionInfo:
             raise exceptions.VersionNotSupported(version)
         return self.versions.get(version, {})
 
-    def get_repos(self, version) -> list:
+    def get_repos(self, version, enable_ceph: bool = False) -> list:
         r = []
         dist = self.distro_normalized_id
         version_data = self.get_version(version)
@@ -119,9 +119,13 @@ class DistributionInfo:
         if 'centos' in dist:
             for repo in version_data['repos'].get(dist, []):
                 r.append(repos.TripleoCentosRepo(dist, repo))
-        if 'ceph' in version_data['repos']:
+        if 'ceph' in version_data['repos'] and enable_ceph:
             for repo in version_data['repos']['ceph']:
-                r.append(repos.TripleoCephRepo(dist, repo))
+                if 'centos' in self.distro_normalized_id:
+                    r.append(repos.TripleoCephRepo(dist, repo))
+                else:
+                    # TODO: handle ceph rhel repos
+                    pass
         if 'delorean' in version_data['repos']:
             distro = f'{self.distro_id}{self.distro_major_version_id}'
             for repo in version_data['repos']['delorean']:
