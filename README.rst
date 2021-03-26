@@ -1,4 +1,7 @@
 rhos-bootstrap
 ==============
 
-![CI Status](https://github.com/mwhahaha/rhos-bootstrap/actions/workflows/main.yaml/badge.svg)
+|CI Status|
+
+.. |CI Status| image:: https://github.com/mwhahaha/rhos-bootstrap/actions/workflows/py-tox/badge.svg
+   :target:
