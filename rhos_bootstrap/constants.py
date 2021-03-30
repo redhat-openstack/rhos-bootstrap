@@ -45,3 +45,13 @@ CENTOS_REPO_MAP = {
     "rt": "RT",
     "virt": "virt",
 }
+
+SUPPORTED_REPOS = [
+    "ansible",
+    "ceph",
+    "delorean",
+    "openstack",
+    "openvswitch",
+    "satellite",
+    "virt",
+]

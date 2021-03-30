@@ -16,9 +16,9 @@ import unittest
 from rhos_bootstrap.utils import repos
 
 
-class TestRhsmRepos(unittest.TestCase):
+class RhsmRepos(unittest.TestCase):
     def test_base(self):
-        obj = repos.BaseRhsmRepo("foo")
+        obj = repos.RhsmRepo("foo")
         self.assertEqual(obj.name, "foo")
 
 

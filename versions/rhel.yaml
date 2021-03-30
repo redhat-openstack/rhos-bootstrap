@@ -11,7 +11,8 @@ distros:
 # OpenStack versions #
 ######################
 versions:
-  16.1:
+  # NOTE: the versions keys need to be a string, make sure to quote.
+  "16.1":
     distros:
       - rhel8.2
     repos:

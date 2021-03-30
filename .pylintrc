@@ -474,8 +474,9 @@ redefining-builtins-modules=six.moves,past.builtins,future.builtins,builtins,io
 logging-modules=logging
 
 # Format style used to check logging format string. `old` means using %
-# # formatting, `new` is for `{}` formatting,and `fstr` is for f-strings.
-logging-format-style=new
+# formatting, `new` is for `{}` formatting,and `fstr` is for f-strings.
+# NOTE(mwhahaha): needed because rhel8 has old logging style
+logging-format-style=old
 
 
 [IMPORTS]

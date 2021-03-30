@@ -15,6 +15,7 @@
 import os
 import requests
 
+from rhos_bootstrap.utils.rhsm import SubscriptionManager
 from rhos_bootstrap.constants import DEFAULT_MIRROR_MAP
 from rhos_bootstrap.constants import CENTOS_RELEASE_MAP
 from rhos_bootstrap.constants import CENTOS_REPO_MAP
@@ -22,15 +23,19 @@ from rhos_bootstrap.constants import YUM_REPO_BASE_DIR
 from rhos_bootstrap.exceptions import RepositoryNotSupported
 
 
-class BaseRhsmRepo:  # pylint: disable=too-few-public-methods
+class RhsmRepo:  # pylint: disable=too-few-public-methods
     """Base repo object for rhsm"""
 
     def __init__(self, name: str):
         self._name = name
+        self._rhsm = SubscriptionManager.instance()
 
     @property
     def name(self):
         return self._name
+
+    def save(self):
+        self._rhsm.repos(enable=[self._name])
 
 
 class BaseYumRepo:  # pylint: disable=too-many-instance-attributes

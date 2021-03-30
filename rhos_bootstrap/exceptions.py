@@ -24,6 +24,25 @@ class DistroNotSupported(Exception):
         super().__init__(message.format(distro_id))
 
 
+class SubscriptionManagerConfigError(Exception):
+    """Subscription manager not configured correctly"""
+
+    def __init__(  # pylint: disable=useless-super-delegation
+        self,
+        message: str = "Red Hat Subscription Manager is not currently configured correctly",
+    ):
+        super().__init__(message)
+
+
+class SubscriptionManagerFailure(Exception):
+    """Subscription manager failed"""
+
+    def __init__(
+        self, cmd_line: str, message: str = "Failed running subscription-manager {}"
+    ):
+        super().__init__(message.format(cmd_line))
+
+
 class VersionNotSupported(Exception):
     """Version is not supported"""
 

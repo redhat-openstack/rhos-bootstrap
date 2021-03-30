@@ -23,6 +23,7 @@ from rhos_bootstrap import constants
 from rhos_bootstrap import exceptions
 from rhos_bootstrap.utils import repos
 from rhos_bootstrap.utils import dnf
+from rhos_bootstrap.utils import rhsm
 
 LOG = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class DistributionInfo:
     def _load_data(self):
         data_path = os.path.join(constants.RHOS_VERSIONS_DIR, f"{self.distro_id}.yaml")
         if not os.path.exists(data_path):
-            LOG.error("{} does not exist", data_path)
+            LOG.error("%s does not exist", data_path)
             raise exceptions.DistroNotSupported(self.distro_id)
         with open(data_path, "r") as data:
             self._distro_data = yaml.safe_load(data.read())
@@ -107,8 +108,10 @@ class DistributionInfo:
         ver = [
             self.distro_id,
             self.distro_major_version_id,
-            self.distro_minor_version_id,
         ]
+        if self.distro_minor_version_id:
+            # handle period before minor version if exists
+            ver.append("." + self.distro_minor_version_id)
         if self.is_stream:
             ver.append("-stream")
         return "".join(ver)
@@ -117,41 +120,73 @@ class DistributionInfo:
         return self.distro_normalized_id
 
     def validate_distro(self, version) -> bool:
+        if version not in self.versions:
+            LOG.warning(
+                "%s not in defined in release information",
+                version,
+            )
+            return False
+        # make sure distro is in the listed distributions
         distros = self.versions[version].get("distros", [])
         if self.distro_normalized_id not in distros:
             LOG.warning(
-                "{distro} not in {distros}",
-                distro=self.distro_normalized_id,
-                distros=distros,
+                "%s not in %s",
+                self.distro_normalized_id,
+                distros,
             )
             return False
+        # make sure subscription manager is at least registered and base os locked
+        if "rhel" in self.distro_id:
+            submgr = rhsm.SubscriptionManager.instance()
+            submgr.status()
+            _, out, _ = submgr.release()
+            ver = f"{self.distro_major_version_id}.{self.distro_minor_version_id}"
+            # The output will be "Release not set" or "Release: X.Y"
+            if "not set" in out or f": {ver}" not in out:
+                LOG.warning(
+                    "System not currently locked to the correct release. "
+                    "Please run subscription-manager release --set=%s",
+                    ver,
+                )
+                raise exceptions.SubscriptionManagerConfigError()
         return True
 
     def get_version(self, version) -> dict:
         if version not in self.versions:
-            LOG.error("{} is not available in version list", version)
+            LOG.error("%s is not available in version list", version)
             raise exceptions.VersionNotSupported(version)
         return self.versions.get(version, {})
+
+    def construct_repo(self, repo_type, version, name):
+        # RHEL only supports rhsm
+        if "rhel" in self.distro_id:
+            return repos.RhsmRepo(name)
+        if "centos" in repo_type:
+            return repos.TripleoCentosRepo(repo_type, name)
+        if "ceph" in repo_type:
+            return repos.TripleoCephRepo(self.distro_normalized_id, name)
+        if "delorean" in repo_type:
+            dlrn_dist = f"{self.distro_id}{self.distro_major_version_id}"
+            return repos.TripleoDeloreanRepos(dlrn_dist, version, name)
+        raise exceptions.RepositoryNotSupported(repo_type)
 
     def get_repos(self, version, enable_ceph: bool = False) -> list:
         r = []
         dist = self.distro_normalized_id
         version_data = self.get_version(version)
         if dist not in version_data["repos"]:
-            LOG.warning("{} missing from version repos", dist)
-        if "centos" in dist:
-            for repo in version_data["repos"].get(dist, []):
-                r.append(repos.TripleoCentosRepo(dist, repo))
-        if "ceph" in version_data["repos"] and enable_ceph:
-            for repo in version_data["repos"]["ceph"]:
-                if "centos" in self.distro_normalized_id:
-                    r.append(repos.TripleoCephRepo(dist, repo))
-                else:
-                    NotImplementedError("Ceph on RHEL not yet implemented")
-        if "delorean" in version_data["repos"]:
-            distro = f"{self.distro_id}{self.distro_major_version_id}"
-            for repo in version_data["repos"]["delorean"]:
-                r.append(repos.TripleoDeloreanRepos(distro, version, repo))
+            LOG.warning("%s missing from version repos", dist)
+
+        # handle distro specific repos
+        for name in version_data["repos"].get(dist, []):
+            r.append(self.construct_repo(dist, version, name))
+
+        # handle other software related repos
+        for repo in constants.SUPPORTED_REPOS:
+            for name in version_data["repos"].get(repo, []):
+                if not enable_ceph and "ceph" in name:
+                    continue
+                r.append(self.construct_repo(dist, version, name))
         return r
 
     def get_modules(self, version) -> list:

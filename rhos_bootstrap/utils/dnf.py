@@ -32,6 +32,16 @@ STATE_UNKNOWN = libdnf.module.ModulePackageContainer.ModuleState_UNKNOWN
 class DnfManager:  # pylint: disable=too-many-instance-attributes
     """Dnf management class"""
 
+    _instance = None
+    dnf_base = None
+    cli = None
+    module_base = None
+    all_modules = []
+    enabled_modules = {}
+    default_modules = {}
+    disabled_modules = {}
+    unknown_modules = {}
+
     class _DnfLogging(dnf.logging.Logging):  # pylint: disable=too-few-public-methods
         """Dnf logging extention"""
 
@@ -40,36 +50,32 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
         ):
             """Skip file logging setup"""
 
-        def _setup(
-            self,
-            verbose_level,
-            error_level,
-            logfile_level,
-            logdir,
-            log_size,
-            log_rotate,
-            log_compress,
-        ):
+        def _setup(self, *args, **kwargs):
             """Skip regular logging setup"""
 
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls.__new__(cls)
+            cls._instance.setup()
+        return cls._instance
+
     def __init__(self):
+        raise RuntimeError("Use instance()")
+
+    def setup(self):
         self.dnf_base = dnf.Base()
-        self.dnf_base._logging = self._DnfLogging()
+        self.dnf_base._logging = self._DnfLogging()  # pylint: disable=protected-access
         self.dnf_base.conf.best = True
         # https://gerrit.ovirt.org/c/otopi/+/112682/9/src/otopi/minidnf.py
         self.cli = Cli(self.dnf_base)
-        self.cli._read_conf_file()
+        self.cli._read_conf_file()  # pylint: disable=protected-access
         self.dnf_base.init_plugins(disabled_glob=[], cli=self.cli)
         self.dnf_base.pre_configure_plugins()
         self.dnf_base.read_all_repos()
         self.dnf_base.configure_plugins()
         self.dnf_base.fill_sack()
         self.module_base = dnf.module.module_base.ModuleBase(self.dnf_base)
-        self.all_modules = []
-        self.enabled_modules = {}
-        self.default_modules = {}
-        self.disabled_modules = {}
-        self.unknown_modules = {}
         self._update_modules()
 
     def _build_module_string(self, name, stream=None, profile=None):
@@ -78,7 +84,7 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
             val = "%s:%s" % (val, stream)
         if profile:
             val = "%s/%s" % (val, profile)
-        LOG.debug("module string: {}", val)
+        LOG.debug("module string: %s", val)
         return val
 
     def _update_modules(self):
@@ -106,12 +112,14 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
         LOG.debug("Handling package tranaction")
         self.dnf_base.resolve(allow_erasing=True)
         self.dnf_base.download_packages(self.dnf_base.transaction.install_set)
+        if not getattr(self.dnf_base, 'package_signature_check', None):
+            return
         for pkg in self.dnf_base.transaction.install_set:
             res, err = self.dnf_base.package_signature_check(pkg)
             if res == 1:
 
                 def _ask(data):
-                    LOG.info("Importing GPG {}-{}", data["userid"], data["hexkeyid"])
+                    LOG.info("Importing GPG %s-%s", data["userid"], data["hexkeyid"])
                     return True
 
                 self.dnf_base.package_import_key(pkg, fullakscb=_ask)

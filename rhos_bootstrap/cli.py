@@ -21,6 +21,7 @@ import sys
 from rhos_bootstrap import distribution
 from rhos_bootstrap.exceptions import DistroNotSupported
 from rhos_bootstrap.utils.dnf import DnfManager
+from rhos_bootstrap.utils.rhsm import SubscriptionManager
 
 LOG = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class BootstrapCli:
         return args
 
 
-def main():  # pylint: disable=too-many-branches
+def main():  # pylint: disable=too-many-branches,too-many-statements
     cli = BootstrapCli()
     args = cli.parse_args()
 
@@ -115,24 +116,29 @@ def main():  # pylint: disable=too-many-branches
         sys.exit(2)
 
     LOG.info("=" * 40)
-    LOG.info("=== OpenStack Version: {}", args.version)
+    LOG.info("=== OpenStack Version: %s", args.version)
     distro = distribution.DistributionInfo()
-    LOG.info("=== Distribution: {}", distro.distro_normalized_id)
+    LOG.info("=== Distribution: %s", distro.distro_normalized_id)
     LOG.info("=" * 40)
     if not args.skip_validation:
         LOG.info("=== Validating version for distro...")
         if not distro.validate_distro(args.version):
-            raise DistroNotSupported("Distro not supported for this version")
-        LOG.info("OK! {} on {}", args.version, distro.distro_normalized_id)
+            raise DistroNotSupported(distro.distro_normalized_id)
+        LOG.info("OK! %s on %s", args.version, distro.distro_normalized_id)
     else:
         LOG.info("=== Skipping validation of version for distro...")
 
     if not args.skip_repos:
         repos = distro.get_repos(args.version, enable_ceph=not args.skip_ceph_install)
         LOG.info("=== Configuring repositories....")
+
+        if "rhel" in distro.distro_id:
+            LOG.info("Disabling all existing configured repositories...")
+            rhsm = SubscriptionManager.instance()
+            rhsm.repos(disable=['*'])
+
         for repo in repos:
-            LOG.debug(repo.name)
-            LOG.info("Saving {}", repo.name)
+            LOG.info("Configuring %s", repo.name)
             repo.save()
     else:
         LOG.info("=== Skipping repository configuration...")
@@ -141,13 +147,13 @@ def main():  # pylint: disable=too-many-branches
         args.skip_modules and not args.update_packages and args.skip_client_install
     ):
         # we don't need a manager if we're not calling it
-        manager = DnfManager()
+        manager = DnfManager.instance()
 
     if not args.skip_modules:
         modules = distro.get_modules(args.version)
         LOG.info("=== Configuring modules...")
         for mod in modules:
-            LOG.info("Enabling {}:{}", mod.name, mod.stream)
+            LOG.info("Enabling %s:%s", mod.name, mod.stream)
             manager.enable_module(mod.name, mod.stream, mod.profile)
     else:
         LOG.info("=== Skipping module configuration...")
