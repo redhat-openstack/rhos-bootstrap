@@ -135,7 +135,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
         if "rhel" in distro.distro_id:
             LOG.info("Disabling all existing configured repositories...")
             rhsm = SubscriptionManager.instance()
-            rhsm.repos(disable=['*'])
+            rhsm.repos(disable=["*"])
 
         for repo in repos:
             LOG.info("Configuring %s", repo.name)

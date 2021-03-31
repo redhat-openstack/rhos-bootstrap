@@ -28,3 +28,14 @@ class TestExceptions(unittest.TestCase):
     def test_repo_not_supported(self):
         obj = ex.RepositoryNotSupported("foo")
         self.assertEqual(str(obj), "Repository foo is unknown")
+
+    def test_subscription_manager_config_error(self):
+        obj = ex.SubscriptionManagerConfigError()
+        self.assertEqual(
+            str(obj),
+            "Red Hat Subscription Manager is not currently configured correctly",
+        )
+
+    def test_subscription_manager_failure(self):
+        obj = ex.SubscriptionManagerFailure("foo")
+        self.assertEqual(str(obj), "Failed running subscription-manager foo")

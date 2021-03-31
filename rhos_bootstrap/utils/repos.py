@@ -20,7 +20,7 @@ from rhos_bootstrap.constants import DEFAULT_MIRROR_MAP
 from rhos_bootstrap.constants import CENTOS_RELEASE_MAP
 from rhos_bootstrap.constants import CENTOS_REPO_MAP
 from rhos_bootstrap.constants import YUM_REPO_BASE_DIR
-from rhos_bootstrap.exceptions import RepositoryNotSupported
+from rhos_bootstrap.exceptions import DistroNotSupported, RepositoryNotSupported
 
 
 class RhsmRepo:  # pylint: disable=too-few-public-methods
@@ -149,6 +149,8 @@ class TripleoCephRepo(BaseYumRepo):
         # NOTE(mwhahaha): 8-stream is currently not supported
         if centos_release == "centos8-stream":
             centos_release = "centos8"
+        if centos_release not in CENTOS_RELEASE_MAP:
+            raise DistroNotSupported(centos_release)
         super().__init__(
             f"tripleo-centos-ceph-{ceph_release}",
             f"tripleo-centos-ceph-{ceph_release}",
@@ -191,7 +193,7 @@ class TripleoDeloreanRepos:
         repo: str,
         mirror: str = DEFAULT_MIRROR_MAP["rdo"],
     ) -> None:
-        self._base_uri = f"{mirror}/{distro}-{version}/"
+        self._base_uri = f"{mirror}/{distro}-{version}"
         if repo == "deps":
             uri = f"{self._base_uri}/delorean-deps.repo"
         else:

@@ -16,7 +16,10 @@ import logging
 import shutil
 import subprocess
 
-from rhos_bootstrap.exceptions import SubscriptionManagerConfigError, SubscriptionManagerFailure
+from rhos_bootstrap.exceptions import (
+    SubscriptionManagerConfigError,
+    SubscriptionManagerFailure,
+)
 
 LOG = logging.getLogger(__name__)
 

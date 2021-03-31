@@ -112,7 +112,7 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
         LOG.debug("Handling package tranaction")
         self.dnf_base.resolve(allow_erasing=True)
         self.dnf_base.download_packages(self.dnf_base.transaction.install_set)
-        if not getattr(self.dnf_base, 'package_signature_check', None):
+        if not getattr(self.dnf_base, "package_signature_check", None):
             return
         for pkg in self.dnf_base.transaction.install_set:
             res, err = self.dnf_base.package_signature_check(pkg)
