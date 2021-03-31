@@ -192,6 +192,6 @@ class DistributionInfo:
     def get_modules(self, version) -> list:
         r = []
         module_data = self.get_version(version).get("modules", {})
-        for mod in module_data.keys():
-            r.append(dnf.DnfModule(mod, module_data[mod]))
+        for item in module_data.items():
+            r.append(dnf.DnfModule(*item))
         return r
