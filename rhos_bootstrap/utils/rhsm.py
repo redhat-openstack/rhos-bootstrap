@@ -44,7 +44,7 @@ class SubscriptionManager:
         if not self._exe:
             self._exe = shutil.which("subscription-manager")
             if not self._exe:
-                raise Exception("subscrition-manager not available in PATH")
+                raise Exception("subscription-manager not available in PATH")
         return self._exe
 
     def run(self, args: list) -> (int, str, str):
@@ -52,7 +52,6 @@ class SubscriptionManager:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
         out, err = proc.communicate()
         rc = proc.returncode
-
         if rc != 0:
             LOG.debug(err)
             raise SubscriptionManagerFailure(" ".join(cmd))
@@ -70,10 +69,10 @@ class SubscriptionManager:
         except SubscriptionManagerFailure as e:
             raise SubscriptionManagerConfigError from e
 
-    def repos(self, enable: list = None, disable: list = None):
+    def repos(self, disable: list = None, enable: list = None):
         cmd_line = ["repos"]
-        if enable:
-            cmd_line.append(f"--enable={','.join(enable)}")
         if disable:
             cmd_line.append(f"--disable={','.join(disable)}")
+        if enable:
+            cmd_line.append(f"--enable={','.join(enable)}")
         return self.run(cmd_line)

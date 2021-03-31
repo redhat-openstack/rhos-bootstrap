@@ -18,7 +18,7 @@ from rhos_bootstrap import exceptions
 from unittest import mock
 
 
-class RhsmRepos(unittest.TestCase):
+class TestRhsmRepos(unittest.TestCase):
     def setUp(self):
         super().setUp()
         submgr_mock = mock.patch(
