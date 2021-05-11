@@ -38,7 +38,25 @@ versions:
       container-tools: rhel8
       virt: rhel
       python36: 3.6
+  xena: *master_branch
   wallaby: *master_branch
+    distros: &distros_centos8
+      - centos8
+      - centos8-stream
+    repos:
+      centos8: &centos8_repos
+        - highavailability
+        - powertools
+      centos8-stream: *centos8_repos
+      ceph:
+        - octopus
+      delorean:
+        - current-tripleo
+        - deps
+    modules:
+      container-tools: 3.0
+      virt: 8.2
+      python36: 3.6
   ###################
   # Stable Branches #
   ###################
