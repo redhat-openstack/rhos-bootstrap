@@ -57,12 +57,17 @@ class DistributionInfo:
         self._load_data()
 
     def _load_data(self):
-        data_path = os.path.join(constants.RHOS_VERSIONS_DIR, f"{self.distro_id}.yaml")
-        if not os.path.exists(data_path):
-            LOG.error("%s does not exist", data_path)
-            raise exceptions.DistroNotSupported(self.distro_id)
-        with open(data_path, "r") as data:
-            self._distro_data = yaml.safe_load(data.read())
+        for ver_path in constants.RHOS_VERSIONS_SEARCH_PATHS:
+            data_path = os.path.join(ver_path, f"{self.distro_id}.yaml")
+            if not os.path.exists(data_path):
+                LOG.debug("%s does not exist", data_path)
+                continue
+            LOG.debug("Found distro data in %s", data_path)
+            with open(data_path, "r") as data:
+                self._distro_data = yaml.safe_load(data.read())
+                return
+        LOG.error("Unable to find a %s.yaml", self.distro_id)
+        raise exceptions.DistroNotSupported(self.distro_id)
 
     @property
     def distro_data(self):

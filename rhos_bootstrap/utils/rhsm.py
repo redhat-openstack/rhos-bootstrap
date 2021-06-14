@@ -49,7 +49,9 @@ class SubscriptionManager:
 
     def run(self, args: list) -> (int, str, str):
         cmd = [self.exe] + args
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True) as proc:
+        with subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, universal_newlines=True
+        ) as proc:
             out, err = proc.communicate()
             rc = proc.returncode
             if rc != 0:

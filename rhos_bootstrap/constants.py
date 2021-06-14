@@ -15,14 +15,11 @@
 import os
 import sys
 
-# NOTE(mwhahaha): So if we pip install this, we need to also
-# honor pulling some other files from a venv. This logic will create a
-# constant for a venv share path.
-SHARE_BASE_PATH = os.path.join(sys.prefix, "share")
-if sys.prefix != "/usr" and not os.path.isdir(SHARE_BASE_PATH):
-    SHARE_BASE_PATH = os.path.join("/usr", "share")
-
-RHOS_VERSIONS_DIR = os.path.join(SHARE_BASE_PATH, "rhos-bootstrap")
+RHOS_VERSIONS_SEARCH_PATHS = [
+    "/usr/share/rhos-bootstrap",
+    "/usr/local/share/rhos-bootstrap",
+    os.path.join(sys.prefix, "share", "rhos-bootstrap"),
+]
 
 YUM_REPO_BASE_DIR = "/etc/yum.repos.d"
 
