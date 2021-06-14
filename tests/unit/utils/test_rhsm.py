@@ -46,7 +46,7 @@ class TestSubscriptionManager(unittest.TestCase):
         proc_mock = mock.MagicMock()
         comm_mock = mock.MagicMock()
         proc_mock.communicate = comm_mock
-        popen_mock.return_value = proc_mock
+        popen_mock.return_value.__enter__.return_value = proc_mock
 
         self.obj._exe = "foo"
 

@@ -49,13 +49,13 @@ class SubscriptionManager:
 
     def run(self, args: list) -> (int, str, str):
         cmd = [self.exe] + args
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-        out, err = proc.communicate()
-        rc = proc.returncode
-        if rc != 0:
-            LOG.debug(err)
-            raise SubscriptionManagerFailure(" ".join(cmd))
-        return rc, out, err
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True) as proc:
+            out, err = proc.communicate()
+            rc = proc.returncode
+            if rc != 0:
+                LOG.debug(err)
+                raise SubscriptionManagerFailure(" ".join(cmd))
+            return rc, out, err
 
     def status(self):
         try:
