@@ -191,7 +191,7 @@ class DistributionInfo:
             for name in version_data["repos"].get(repo, []):
                 if not enable_ceph and "ceph" in name:
                     continue
-                r.append(self.construct_repo(dist, version, name))
+                r.append(self.construct_repo(repo, version, name))
         return r
 
     def get_modules(self, version) -> list:

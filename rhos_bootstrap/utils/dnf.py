@@ -127,7 +127,7 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
                 raise RuntimeError(err)
 
     def _commit(self):
-        LOG.debug("committing changes")
+        LOG.info("Committing changes. This can take a while and ^C is disabled.")
         try:
             self.dnf_base.do_transaction()
         except RuntimeError:
