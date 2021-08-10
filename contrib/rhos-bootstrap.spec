@@ -22,6 +22,8 @@ Requires:       python3-dnf
 Requires:       python3-pyyaml
 Requires:       python3-requests
 
+Suggests:       subscription-manager
+
 BuildRequires:  python3-pbr >= 2.0.0
 
 %{?python_provide:%python_provide python3-%{name}}
