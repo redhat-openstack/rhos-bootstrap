@@ -124,7 +124,7 @@ class TestDistributionInfo(unittest.TestCase):
                 proc_mock = mock.MagicMock()
                 comm_mock = mock.MagicMock()
                 comm_mock.return_value = ["rhel\n8.2\nRed Hat Enterprise Linux"]
-                proc_mock.communicate = comm_mock
+                proc_mock.__enter__.return_value.communicate = comm_mock
                 popen_mock.return_value = proc_mock
                 obj = distribution.DistributionInfo()
                 self.assertEqual(obj.distro_id, "rhel")

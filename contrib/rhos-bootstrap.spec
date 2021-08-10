@@ -27,7 +27,8 @@ Requires:       python3-requests
 %{?python_provide:%python_provide python3-%{name}}
 
 %description
-Red Hat OpenStack bootstrap utility
+A bootstrap tool used to handle repository, dnf module configuration, and
+tripleoclient installation in preparation for a Red Hat OpenStack installation.
 
 # ---------------
 # Setup

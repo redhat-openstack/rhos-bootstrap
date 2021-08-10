@@ -31,7 +31,7 @@ class BootstrapCli:
 
     def __init__(self):
         self._parser = argparse.ArgumentParser(
-            description="Perform basic bootrstrap related functions when "
+            description="Perform basic bootstrap related functions when "
             "installing, updating, or upgrading OpenStack on "
             "Red Hat based systems. This tool can manage "
             "RPM repository and dnf module configurations. This "

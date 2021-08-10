@@ -40,15 +40,18 @@ class DistributionInfo:
         """Distribution Information class"""
         _id, _version_id, _name = (None, None, None)
         if not distro_id or not distro_version_id or not distro_name:
-            output = subprocess.Popen(
-                "source /etc/os-release && " 'echo -e -n "$ID\n$VERSION_ID\n$NAME"',
+            cmd = "source /etc/os-release && " 'echo -e -n "$ID\n$VERSION_ID\n$NAME"'
+            with subprocess.Popen(
+                cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
-                stderr=open(os.devnull, "w"),
+                stderr=subprocess.DEVNULL,
                 executable="/bin/bash",
                 universal_newlines=True,
-            ).communicate()
-            _id, _version_id, _name = output[0].split("\n")
+            ) as proc:
+                output = proc.communicate()
+                print(output)
+                _id, _version_id, _name = output[0].split("\n")
 
         self._distro_id = distro_id or _id
         self._distro_version_id = distro_version_id or _version_id
