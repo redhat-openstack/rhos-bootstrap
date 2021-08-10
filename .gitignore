@@ -3,3 +3,6 @@
 *.pyc
 .tox
 .coverage
+dist
+AUTHORS
+ChangeLog
