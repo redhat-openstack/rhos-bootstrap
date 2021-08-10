@@ -40,9 +40,8 @@ class DistributionInfo:
         """Distribution Information class"""
         _id, _version_id, _name = (None, None, None)
         if not distro_id or not distro_version_id or not distro_name:
-            cmd = "source /etc/os-release && " 'echo -e -n "$ID\n$VERSION_ID\n$NAME"'
             with subprocess.Popen(
-                cmd,
+                "source /etc/os-release && " 'echo -e -n "$ID\n$VERSION_ID\n$NAME"',
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
