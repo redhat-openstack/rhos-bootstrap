@@ -17,12 +17,12 @@ Source:         https://github.com/redhat-openstack/rhos-bootstrap/archive/%{ver
 
 BuildArch:      noarch
 
+Requires:       python3-libdnf
+Requires:       python3-dnf
 Requires:       python3-pyyaml
 Requires:       python3-requests
 
 BuildRequires:  python3-pbr >= 2.0.0
-BuildRequires:  python3-pyyaml
-Requires:       python3-requests
 
 %{?python_provide:%python_provide python3-%{name}}
 
