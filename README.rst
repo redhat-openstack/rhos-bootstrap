@@ -3,8 +3,8 @@ rhos-bootstrap
 
 |CI Status|
 
-.. |CI Status| image:: https://github.com/mwhahaha/rhos-bootstrap/actions/workflows/py-tox.yml/badge.svg
-   :target: https://github.com/mwhahaha/rhos-bootstrap/actions
+.. |CI Status| image:: https://github.com/redhat-openstack/rhos-bootstrap/actions/workflows/py-tox.yml/badge.svg
+   :target: https://github.com/redhat-openstack/rhos-bootstrap/actions
 
 A bootstrap tool used to handle repository, dnf module configuration, and
 tripleoclient installation in preparation for a Red Hat OpenStack installation.
