@@ -30,7 +30,7 @@ versions:
         - powertools
       centos8-stream: *centos8_repos
       ceph:
-        - octopus
+        - pacific
       delorean:
         - current-tripleo
         - deps
@@ -45,7 +45,7 @@ versions:
       centos8: *centos8_repos
       centos8-stream: *centos8_repos
       ceph:
-        - octopus
+        - pacific
       delorean:
         - current-tripleo
         - deps
@@ -91,28 +91,3 @@ versions:
       ceph: *ceph_nautilus
       delorean: *delorean_stable
     modules: *stable_modules
-  stein:
-    distros:
-      - centos7
-    repos:
-      centos7: *centos7_repos
-      ceph: &ceph_luminous
-        - luminous
-      delorean: *delorean_stable
-  rocky:
-    distros:
-      - centos7
-    repos:
-      centos7: *centos7_repos
-      ceph: *ceph_luminous
-      delorean: *delorean_stable
-  queens:
-    distros:
-      - centos7
-    repos:
-      centos7: *centos7_repos
-      ceph: *ceph_luminous
-      delorean: *delorean_stable
-
-
-

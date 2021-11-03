@@ -95,7 +95,7 @@ class TestYumRepos(unittest.TestCase):
         with mock.patch("builtins.open", mock.mock_open()) as file_mock:
             obj.save()
             calls = [
-                mock.call("/etc/yum.repos.d/foo.repo", "w"),
+                mock.call("/etc/yum.repos.d/foo.repo", "w", encoding="utf-8"),
                 mock.call().__enter__(),
                 mock.call().write(str(obj)),
                 mock.call().__exit__(None, None, None),
@@ -178,7 +178,9 @@ class TestDeloreanRepos(unittest.TestCase):
             obj.save()
             calls = [
                 mock.call(
-                    "/etc/yum.repos.d/tripleo-delorean-current-tripleo.repo", "w"
+                    "/etc/yum.repos.d/tripleo-delorean-current-tripleo.repo",
+                    "w",
+                    encoding="utf-8",
                 ),
                 mock.call().__enter__(),
                 mock.call().write(str(obj)),

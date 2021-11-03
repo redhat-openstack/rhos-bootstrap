@@ -81,9 +81,9 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
     def _build_module_string(self, name, stream=None, profile=None):
         val = name
         if stream:
-            val = "%s:%s" % (val, stream)
+            val = f"{val}:{stream}"
         if profile:
-            val = "%s/%s" % (val, profile)
+            val = f"{val}:{profile}"
         LOG.debug("module string: %s", val)
         return val
 

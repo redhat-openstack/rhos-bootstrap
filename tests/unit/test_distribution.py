@@ -98,7 +98,9 @@ class TestDistributionInfo(unittest.TestCase):
             "builtins.open", mock.mock_open(read_data=DUMMY_CENTOS_DATA)
         ) as open_mock:
             obj = distribution.DistributionInfo("centos", "8", "CentOS Stream")
-            open_mock.assert_called_with("/usr/share/rhos-bootstrap/centos.yaml", "r")
+            open_mock.assert_called_with(
+                "/usr/share/rhos-bootstrap/centos.yaml", "r", encoding="utf-8"
+            )
             self.assertEqual(obj.distro_data, dummy_data)
             self.assertEqual(obj.distro_id, "centos")
             self.assertEqual(obj.distro_version_id, "8")

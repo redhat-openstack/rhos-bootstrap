@@ -65,7 +65,7 @@ class DistributionInfo:
                 LOG.debug("%s does not exist", data_path)
                 continue
             LOG.debug("Found distro data in %s", data_path)
-            with open(data_path, "r") as data:
+            with open(data_path, "r", encoding="utf-8") as data:
                 self._distro_data = yaml.safe_load(data.read())
                 return
         LOG.error("Unable to find a %s.yaml", self.distro_id)

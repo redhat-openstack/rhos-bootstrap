@@ -133,7 +133,7 @@ class BaseYumRepo:  # pylint: disable=too-many-instance-attributes
             raise PermissionError(f"{repo_dir} is not writable")
         if os.path.isfile(repo_path) and not os.access(repo_path, os.W_OK):
             raise PermissionError(f"{repo_path} is not writable")
-        with open(repo_path, "w") as f:
+        with open(repo_path, "w", encoding="utf-8") as f:
             f.write(str(self))
 
 
@@ -226,5 +226,5 @@ class TripleoDeloreanRepos:
             raise PermissionError(f"{repo_dir} is not writable")
         if os.path.isfile(repo_path) and not os.access(repo_path, os.W_OK):
             raise PermissionError(f"{repo_path} is not writable")
-        with open(repo_path, "w") as f:
+        with open(repo_path, "w", encoding="utf-8") as f:
             f.write(str(self))
