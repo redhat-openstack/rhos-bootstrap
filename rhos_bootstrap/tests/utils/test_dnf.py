@@ -18,8 +18,11 @@ from unittest import mock
 
 sys.modules["dnf"] = mock.MagicMock()
 sys.modules["dnf.cli.cli"] = mock.MagicMock()
+sys.modules["dnf.cli.progress"] = mock.MagicMock()
 sys.modules["dnf.exceptions"] = mock.MagicMock()
 sys.modules["dnf.logging"] = mock.MagicMock()
+sys.modules["dnf.transaction"] = mock.MagicMock()
+sys.modules["dnf.yum.rpmtrans"] = mock.MagicMock()
 sys.modules["libdnf"] = mock.MagicMock()
 from rhos_bootstrap.utils import dnf
 

@@ -49,7 +49,7 @@ class DistributionInfo:
                 universal_newlines=True,
             ) as proc:
                 output = proc.communicate()
-                print(output)
+                LOG.debug("os-release info: %s", output)
                 _id, _version_id, _name = output[0].split("\n")
 
         self._distro_id = distro_id or _id
