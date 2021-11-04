@@ -16,9 +16,14 @@ import os
 import sys
 
 RHOS_VERSIONS_SEARCH_PATHS = [
-    "/usr/share/rhos-bootstrap",
-    "/usr/local/share/rhos-bootstrap",
+    # pkg
+    os.path.join("/usr", "share", "rhos-bootstrap"),
+    # sudo pip install
+    os.path.join("/usr", "local", "share", "rhos-bootstrap"),
+    # pip install
     os.path.join(sys.prefix, "share", "rhos-bootstrap"),
+    # setup.py build
+    os.path.join(sys.prefix, "share", "rhos_bootstrap"),
 ]
 
 YUM_REPO_BASE_DIR = "/etc/yum.repos.d"
