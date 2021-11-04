@@ -122,7 +122,7 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
                     LOG.info("Importing GPG %s-%s", data["userid"], data["hexkeyid"])
                     return True
 
-                self.dnf_base.package_import_key(pkg, fullakscb=_ask)
+                self.dnf_base.package_import_key(pkg, fullaskcb=_ask)
             elif res != 0:
                 raise RuntimeError(err)
 
