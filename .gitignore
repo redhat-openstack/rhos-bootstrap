@@ -4,5 +4,6 @@
 .tox
 .coverage
 dist
+build
 AUTHORS
 ChangeLog
