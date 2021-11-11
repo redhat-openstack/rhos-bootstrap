@@ -14,12 +14,15 @@
 
 import logging
 import dnf  # pylint: disable=import-error
+import dnf.cli.progress  # pylint: disable=import-error
 import dnf.logging  # pylint: disable=import-error
+import dnf.transaction  # pylint: disable=import-error
 import libdnf  # pylint: disable=import-error
 import yaml
 
 from dnf.cli.cli import Cli  # pylint: disable=import-error
 from dnf.exceptions import MarkingError  # pylint: disable=import-error
+from dnf.yum.rpmtrans import TransactionDisplay  # pylint: disable=import-error
 
 LOG = logging.getLogger(__name__)
 
@@ -42,16 +45,23 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
     disabled_modules = {}
     unknown_modules = {}
 
-    class _DnfLogging(dnf.logging.Logging):  # pylint: disable=too-few-public-methods
-        """Dnf logging extention"""
+    class LoggingTransactionDisplay(TransactionDisplay):
+        """Display logger
 
-        def _setup_file_loggers(
-            self, logfile_level, logdir, log_size, log_rotate, log_compress
-        ):
-            """Skip file logging setup"""
+        This class provides a basic transaction logger so it gets logged
+        to the rhos-bootstrap loggs.
+        """
 
-        def _setup(self, *args, **kwargs):
-            """Skip regular logging setup"""
+        def __init__(self, logger):
+            self.log = logger
+
+        def error(self, message):
+            self.log.error(message)
+
+        def filelog(self, package, action):
+            action_str = dnf.transaction.FILE_ACTIONS[action]
+            msg = f"{action_str}: {package}"
+            self.log.info(msg)
 
     @classmethod
     def instance(cls):
@@ -65,8 +75,10 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
 
     def setup(self):
         self.dnf_base = dnf.Base()
-        self.dnf_base._logging = self._DnfLogging()  # pylint: disable=protected-access
         self.dnf_base.conf.best = True
+        self.dnf_base.conf.debuglevel = 0
+        self.dnf_base.conf.errorlevel = 2
+        self.dnf_base.conf.logfilelevel = 2
         # https://gerrit.ovirt.org/c/otopi/+/112682/9/src/otopi/minidnf.py
         self.cli = Cli(self.dnf_base)
         self.cli._read_conf_file()  # pylint: disable=protected-access
@@ -74,7 +86,6 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
         self.dnf_base.pre_configure_plugins()
         self.dnf_base.read_all_repos()
         self.dnf_base.configure_plugins()
-        self.dnf_base.fill_sack()
         self.module_base = dnf.module.module_base.ModuleBase(self.dnf_base)
         self._update_modules()
 
@@ -111,7 +122,8 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
     def _process_packages(self):
         LOG.debug("Handling package tranaction")
         self.dnf_base.resolve(allow_erasing=True)
-        self.dnf_base.download_packages(self.dnf_base.transaction.install_set)
+        progress = dnf.cli.progress.MultiFileProgressMeter()
+        self.dnf_base.download_packages(self.dnf_base.transaction.install_set, progress)
         if not getattr(self.dnf_base, "package_signature_check", None):
             return
         for pkg in self.dnf_base.transaction.install_set:
@@ -127,9 +139,10 @@ class DnfManager:  # pylint: disable=too-many-instance-attributes
                 raise RuntimeError(err)
 
     def _commit(self):
-        LOG.info("Committing changes. This can take a while and ^C is disabled.")
+        LOG.warning("Committing changes. This can take a while and ^C may be disabled.")
         try:
-            self.dnf_base.do_transaction()
+            display = [self.LoggingTransactionDisplay(LOG)]
+            self.dnf_base.do_transaction(display)
         except RuntimeError:
             LOG.error("Runtime error, please run as root")
             raise

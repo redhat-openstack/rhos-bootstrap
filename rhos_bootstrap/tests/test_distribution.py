@@ -20,6 +20,7 @@ from unittest import mock
 
 sys.modules["dnf"] = mock.MagicMock()
 sys.modules["dnf.cli.cli"] = mock.MagicMock()
+sys.modules["dnf.cli.progress"] = mock.MagicMock()
 sys.modules["dnf.exceptions"] = mock.MagicMock()
 sys.modules["dnf.logging"] = mock.MagicMock()
 sys.modules["libdnf"] = mock.MagicMock()

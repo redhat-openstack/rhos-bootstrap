@@ -15,15 +15,18 @@
 from __future__ import print_function
 import argparse
 import logging
+import logging.config
 import os
 import sys
 
-from rhos_bootstrap import distribution
-from rhos_bootstrap.exceptions import DistroNotSupported
-from rhos_bootstrap.utils.dnf import DnfManager
-from rhos_bootstrap.utils.rhsm import SubscriptionManager
+from . import distribution
+from .exceptions import DistroNotSupported
+from .utils.dnf import DnfManager
+from .utils.rhsm import SubscriptionManager
 
 LOG = logging.getLogger(__name__)
+LOG_FORMAT = "[%(asctime)s] [%(levelname)s]: %(message)s"
+LOG_FILE = "/var/log/rhos-bootstrap.log"
 
 
 class BootstrapCli:
@@ -79,10 +82,8 @@ class BootstrapCli:
             action="store_true",
             default=False,
             help=(
-                "Perform a system update after "
-                "configuring the system "
-                "repositories and modules "
-                "configuration."
+                "Perform a system update after configuring the system "
+                "repositories and modules configuration."
             ),
         )
         self.parser.add_argument(
@@ -94,21 +95,57 @@ class BootstrapCli:
         self.parser.add_argument(
             "--debug", action="store_true", default=False, help="Enable debug logging"
         )
+        self.parser.add_argument(
+            "--skip-log-file",
+            action="store_false",
+            default=True,
+            help=f"Disable logging to {LOG_FILE}",
+        )
+
         args = self.parser.parse_args()
         return args
+
+    def configure_logger(self, log_file=True, debug=False):
+        log_level = logging.INFO
+        if debug:
+            log_level = logging.DEBUG
+        conf = {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {"standard": {"format": LOG_FORMAT}},
+            "handlers": {
+                "default": {
+                    "level": log_level,
+                    "class": "logging.StreamHandler",
+                    "formatter": "standard",
+                    "stream": sys.stdout,
+                },
+                "log_file": {
+                    "level": log_level,
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "formatter": "standard",
+                    "filename": LOG_FILE,
+                    "maxBytes": 10485760,
+                    "backupCount": 7,
+                },
+            },
+            "loggers": {
+                "": {
+                    "handlers": ["default"],
+                    "level": log_level,
+                    "proagate": True,
+                }
+            },
+        }
+        if log_file:
+            conf["loggers"][""]["handlers"] = ["default", "log_file"]
+        logging.config.dictConfig(conf)
 
 
 def main():  # pylint: disable=too-many-branches,too-many-statements
     cli = BootstrapCli()
     args = cli.parse_args()
-
-    log_level = logging.INFO
-    if args.debug:
-        log_level = logging.DEBUG
-
-    logging.basicConfig(
-        format="[%(asctime)s] [%(levelname)s]: %(message)s", level=log_level
-    )
+    cli.configure_logger(log_file=args.skip_log_file, debug=args.debug)
 
     if os.getuid() != 0:
         LOG.error("You must be root to run this command")
@@ -130,7 +167,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
 
     if not args.skip_repos:
         repos = distro.get_repos(args.version, enable_ceph=not args.skip_ceph_install)
-        LOG.info("=== Configuring repositories....")
+        LOG.info("=== Configuring repositories...")
 
         if "rhel" in distro.distro_id:
             LOG.info("Disabling all existing configured repositories...")
@@ -146,8 +183,11 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
     if not (
         args.skip_modules and not args.update_packages and args.skip_client_install
     ):
+        LOG.info("=== Configuring dnf...")
         # we don't need a manager if we're not calling it
         manager = DnfManager.instance()
+    else:
+        LOG.info("=== Skipping dnf configuration...")
 
     if not args.skip_modules:
         modules = distro.get_modules(args.version)
