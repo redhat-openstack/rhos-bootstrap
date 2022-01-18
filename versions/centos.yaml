@@ -8,7 +8,6 @@ distros:
       - http://mirror.centos.org
     versions:
       - 7
-      - 8
       - 8-stream
   fedora:
     versions:
@@ -22,13 +21,11 @@ distros:
 versions:
   master: &master_branch
     distros: &distros_centos8
-      - centos8
       - centos8-stream
     repos:
-      centos8: &centos8_repos
+      centos8-stream: &centos8_repos
         - highavailability
         - powertools
-      centos8-stream: *centos8_repos
       ceph:
         - pacific
       delorean:
@@ -42,7 +39,6 @@ versions:
   wallaby:
     distros: *distros_centos8
     repos:
-      centos8: *centos8_repos
       centos8-stream: *centos8_repos
       ceph:
         - pacific
@@ -59,7 +55,6 @@ versions:
   victoria:
     distros: *distros_centos8
     repos:
-      centos8: *centos8_repos
       centos8-stream: *centos8_repos
       ceph: &ceph_nautilus
         - nautilus
@@ -73,7 +68,6 @@ versions:
   ussuri:
     distros: *distros_centos8
     repos:
-      centos8: *centos8_repos
       centos8-stream: *centos8_repos
       ceph: *ceph_nautilus
       delorean: *delorean_stable
@@ -81,12 +75,10 @@ versions:
   train:
     distros:
       - centos7
-      - centos8
       - centos8-stream
     repos:
       centos7: &centos7_repos
         - opstools
-      centos8: *centos8_repos
       centos8-stream: *centos8_repos
       ceph: *ceph_nautilus
       delorean: *delorean_stable
