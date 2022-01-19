@@ -189,7 +189,8 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
     else:
         LOG.info("=== Skipping dnf configuration...")
 
-    if not args.skip_modules:
+    # modules are only an 8 thing
+    if not args.skip_modules and int(distro.distro_major_version_id) < 9:
         modules = distro.get_modules(args.version)
         LOG.info("=== Configuring modules...")
         for mod in modules:

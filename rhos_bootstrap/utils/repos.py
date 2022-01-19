@@ -19,6 +19,7 @@ from rhos_bootstrap.utils.rhsm import SubscriptionManager
 from rhos_bootstrap.constants import DEFAULT_MIRROR_MAP
 from rhos_bootstrap.constants import CENTOS_RELEASE_MAP
 from rhos_bootstrap.constants import CENTOS_REPO_MAP
+from rhos_bootstrap.constants import CENTOS_SIG_LIST
 from rhos_bootstrap.constants import YUM_REPO_BASE_DIR
 from rhos_bootstrap.exceptions import DistroNotSupported, RepositoryNotSupported
 
@@ -141,22 +142,24 @@ class TripleoCephRepo(BaseYumRepo):
     """Upstream Ceph Repo"""
 
     def __init__(
-        self,
-        centos_release: str,
-        ceph_release: str,
-        mirror: str = DEFAULT_MIRROR_MAP["centos"],
+        self, centos_release: str, ceph_release: str, mirror: str = None
     ) -> None:
-        # NOTE(mwhahaha): 8-stream is currently not supported
-        if centos_release == "centos8-stream":
-            centos_release = "centos8"
         if centos_release not in CENTOS_RELEASE_MAP:
             raise DistroNotSupported(centos_release)
+        if mirror is None:
+            mirror = DEFAULT_MIRROR_MAP[centos_release]
+        centos_short_release = CENTOS_RELEASE_MAP[centos_release]
+        if centos_short_release == "8-stream":
+            path_base = "centos/"
+        else:
+            # 9-stream storage is in the SIGs path
+            path_base = "SIGs/"
         super().__init__(
             f"tripleo-centos-ceph-{ceph_release}",
             f"tripleo-centos-ceph-{ceph_release}",
             (
-                f"{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}"
-                f"/storage/$basearch/ceph-{ceph_release}/"
+                f"{mirror}/{path_base}{centos_short_release}/"
+                f"storage/$basearch/ceph-{ceph_release}/"
             ),
             True,
             False,
@@ -166,16 +169,25 @@ class TripleoCephRepo(BaseYumRepo):
 class TripleoCentosRepo(BaseYumRepo):
     """Upstream CentOS Repo"""
 
-    def __init__(
-        self, centos_release: str, repo: str, mirror: str = DEFAULT_MIRROR_MAP["centos"]
-    ) -> None:
+    def __init__(self, centos_release: str, repo: str, mirror: str = None) -> None:
         if repo not in CENTOS_REPO_MAP:
             raise RepositoryNotSupported(repo)
+        if mirror is None:
+            mirror = DEFAULT_MIRROR_MAP[centos_release]
+        centos_short_release = CENTOS_RELEASE_MAP[centos_release]
+        if centos_short_release == "8-stream":
+            # 8-stream has repos in centos base
+            path_base = "centos/"
+        else:
+            path_base = ""
+            # 9-stream+ has some repos in SIGs
+            if repo in CENTOS_SIG_LIST:
+                path_base = "SIGs/"
         super().__init__(
             f"tripleo-centos-{repo}",
             f"tripleo-centos-{repo}",
             (
-                f"{mirror}/centos/{CENTOS_RELEASE_MAP[centos_release]}/"
+                f"{mirror}/{path_base}{centos_short_release}/"
                 f"{CENTOS_REPO_MAP[repo]}/$basearch/os/"
             ),
             True,
