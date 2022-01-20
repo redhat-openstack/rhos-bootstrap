@@ -31,12 +31,14 @@ YUM_REPO_BASE_DIR = "/etc/yum.repos.d"
 DEFAULT_MIRROR_MAP = {
     "fedora": "https://mirrors.fedoraproject.org",
     "centos": "http://mirror.centos.org",
+    "centos8-stream": "http://mirror.centos.org",
+    "centos9-stream": "http://mirror.stream.centos.org",
     "ubi": "http://mirror.centos.org",
     "rhel": "https://trunk.rdoproject.org",
     "rdo": "https://trunk.rdoproject.org",
 }
 
-CENTOS_RELEASE_MAP = {"centos8": "8", "centos8-stream": "8-stream"}
+CENTOS_RELEASE_MAP = {"centos8-stream": "8-stream", "centos9-stream": "9-stream"}
 
 CENTOS_REPO_MAP = {
     "baseos": "BaseOS",
@@ -46,7 +48,19 @@ CENTOS_REPO_MAP = {
     "powertools": "PowerTools",
     "rt": "RT",
     "virt": "virt",
+    "crb": "CRB",
 }
+
+# SIG related repo list which is used in path for 9-stream+
+CENTOS_SIG_LIST = [
+    "extras",
+    "hyperscale",
+    "infra",
+    "kmods",
+    "messaging",
+    "nfv",
+    "storage",
+]
 
 SUPPORTED_REPOS = [
     "ansible",

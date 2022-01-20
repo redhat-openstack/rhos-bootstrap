@@ -150,7 +150,7 @@ class DistributionInfo:
             ver = f"{self.distro_major_version_id}.{self.distro_minor_version_id}"
             # The output will be "Release not set" or "Release: X.Y"
             if "not set" in out or f": {ver}" not in out:
-                LOG.warning(
+                LOG.error(
                     "System not currently locked to the correct release. "
                     "Please run subscription-manager release --set=%s",
                     ver,

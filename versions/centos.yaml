@@ -4,28 +4,28 @@
 ###########
 distros:
   centos:
-    mirror:
-      - http://mirror.centos.org
-    versions:
-      - 7
-      - 8-stream
-  fedora:
-    versions:
-      - ''
-    mirror:
-      - https://mirrors.fedoraproject.org
+    "8-stream":
+      mirror: http://mirror.centos.org
+      sigs: http://mirror.centos.org/centos/8-stream/
+    "9-stream":
+      mirror: http://mirror.stream.centos.org
+      sigs: http://mirror.stream/centos/SIGs/9-stream/
 
 ######################
 # OpenStack versions #
 ######################
 versions:
   master: &master_branch
-    distros: &distros_centos8
+    distros:
       - centos8-stream
+      - centos9-stream
     repos:
       centos8-stream: &centos8_repos
         - highavailability
         - powertools
+      centos9-stream: &centos9_repos
+        - highavailability
+        - crb
       ceph:
         - pacific
       delorean:
@@ -37,7 +37,8 @@ versions:
       python36: 3.6
   xena: *master_branch
   wallaby:
-    distros: *distros_centos8
+    distros: &distros_centos8
+      - centos8-stream
     repos:
       centos8-stream: *centos8_repos
       ceph:
@@ -74,11 +75,8 @@ versions:
     modules: *stable_modules
   train:
     distros:
-      - centos7
       - centos8-stream
     repos:
-      centos7: &centos7_repos
-        - opstools
       centos8-stream: *centos8_repos
       ceph: *ceph_nautilus
       delorean: *delorean_stable
